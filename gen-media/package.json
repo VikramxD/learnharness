@@ -5,7 +5,8 @@
 		"verify:boot": "node tools/verify/boot.mjs",
 		"verify:teardown": "node tools/verify/teardown.mjs",
 		"test:verify": "node --test tools/verify/test/*.test.mjs scripts/test/*.test.mjs",
-		"check:upstream-touch": "node scripts/upstream-touch.mjs"
+		"check:upstream-touch": "node scripts/upstream-touch.mjs",
+		"verify:checks": "node tools/verify/run-checks.mjs"
 	},
 	"devDependencies": {
 		"playwright-core": "1.60.0"
