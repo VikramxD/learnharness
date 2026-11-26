@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { PluginLearningData } from "learnharness-plugin-api";
 import { ArxivClient, baseArxivId, type ArxivPaper } from "./arxiv.ts";
-import { createEntries, lineagePrerequisites, linkSession, markUnderstood, parseEntryId, stagesOf, unlinkSession, type Entry, type EntryId, type LedgerState } from "./domain.ts";
+import { BUILD_STAGES, createEntries, lineagePrerequisites, linkSession, markUnderstood, parseEntryId, recordHandoff, stagesOf, unlinkSession, type BuildStage, type Entry, type EntryId, type LedgerState } from "./domain.ts";
 import { scanEvidence, type ScanReport } from "./evidence.ts";
 import { teachingGoal } from "./goal.ts";
 import { optionalText, requiredEntryId, requiredText } from "./input.ts";
@@ -12,6 +12,7 @@ import { mentionNeedles, SessionReader } from "./sessions.ts";
 import { seedEntries, type Roadmap } from "./seed.ts";
 import { parseSettingsInput, readSettings, writeSettings, type HarnessSettings } from "./settings.ts";
 import { LedgerStore } from "./store.ts";
+import { handoffNote, handoffPath, mirrorNotes, VaultWriter, type SyncReport } from "./vault.ts";
 
 export const LEDGER_TOPIC = "ledger";
 
@@ -24,6 +25,7 @@ export interface HarnessDeps {
   notify: (topic: string) => void;
   arxiv?: ArxivClient;
   fetcher?: typeof fetch;
+  now?: () => Date;
 }
 
 export function createHarness(deps: HarnessDeps) {
@@ -40,6 +42,11 @@ export function createHarness(deps: HarnessDeps) {
     return appended.length;
   };
   const sessions = new SessionReader(deps.learning);
+  const vault = new VaultWriter(path.join(deps.dataDirectory, "vault-manifest.json"));
+  const mirror = async () => {
+    const graph = deps.learning.graph();
+    return mirrorNotes({ rows: ledgerSnapshot(await store.read()).entries, propositions: graph.propositions, chains: graph.chains, sessionTitles: graph.sessions });
+  };
   const entryOf = (state: LedgerState, id: EntryId) => {
     const entry = state.entries[id];
     if (!entry) throw new Error(`Unknown entry ${id}.`);
@@ -160,6 +167,28 @@ export function createHarness(deps: HarnessDeps) {
       return {
         text: teachingGoal({ entry, paths: await desk.localPaths(entry), understoodPrerequisites: prerequisites, question: questions.get(entry.id), understand: stagesOf(state, entry.id).understand }),
       };
+    },
+    async syncVault(): Promise<SyncReport> {
+      return vault.sync((await settings()).vaultPath, (await mirror()).notes);
+    },
+    async handOff(input: unknown) {
+      const entryId = requiredEntryId(input);
+      const stage = requiredText(input, "stage") as BuildStage;
+      if (!BUILD_STAGES.includes(stage)) throw new Error("stage must be implement, optimize or serve.");
+      const entry = entryOf(await store.read(), entryId);
+      const { vaultPath } = await settings();
+      const date = (deps.now?.() ?? new Date()).toLocaleDateString("en-CA");
+      const topic = optionalText(input, "topic") ?? entry.title;
+      const content = handoffNote({
+        entry, date, topic, stage,
+        reference: optionalText(input, "reference"), baseline: optionalText(input, "baseline"), target: optionalText(input, "target"),
+        repo: optionalText(input, "repo"), command: optionalText(input, "command"),
+        chainNotes: (await mirror()).chainNotesOf(entryId),
+      });
+      const notePath = await vault.writeOnce(vaultPath, handoffPath(date, topic), content);
+      const { appended } = await store.transact(state => recordHandoff(state, entryId, notePath));
+      if (appended.length) deps.notify(LEDGER_TOPIC);
+      return { notePath };
     },
     getSettings: settings,
     async saveSettings(input: unknown): Promise<HarnessSettings> {
