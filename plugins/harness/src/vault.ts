@@ -198,7 +198,7 @@ export function handoffNote(input: HandoffInput): string {
     "",
     "## Evidence to write",
     "",
-    `Write one Evidence file, format \`lh-evidence/1\` (contracts/evidence/README.md in the LearnHarness plugins repo), at:`,
+    `Write one Evidence file, format \`lh-evidence/1\` (gen-media/contracts/evidence/README.md on the gen-media branch of the LearnHarness fork), at:`,
     "",
     `\`${repo}/evidence/${entry.id}/${stage}/<producedAt as YYYYMMDDTHHMMSSZ>.json\``,
     "",

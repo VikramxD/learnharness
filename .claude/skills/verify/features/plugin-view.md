@@ -26,5 +26,5 @@ Preconditions:
 
 ## Gotchas
 
-- hello-plugin has no backend. Use `tools/verify/fixtures/echo-plugin` for backend checks.
+- hello-plugin has no backend. Use `gen-media/tools/verify/fixtures/echo-plugin` for backend checks.
 - A plugin that fails to activate never shows its action. Boot reports it as `error` and exits 1.

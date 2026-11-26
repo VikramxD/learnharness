@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { appendFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
-import { validateEvidence } from "../../../contracts/evidence/validate.mjs";
+import { validateEvidence } from "../../../gen-media/contracts/evidence/validate.mjs";
 import { createEntries, ingestEvidence, lineagePrerequisites, linkSession, markUnderstood, parseEntryId, stagesOf, unlinkSession, type Entry, type EntryId, type Evidence, type ValidationResult } from "../src/domain.ts";
 import { LedgerStore } from "../src/store.ts";
 import { tempDirectory } from "./helpers.ts";

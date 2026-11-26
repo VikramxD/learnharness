@@ -17,7 +17,7 @@ The home canvas is the native knowledge map: propositions, chains, and the sessi
 
 Preconditions:
 
-- `node tools/verify/seed-graph.mjs <state.json>` ran. It seeds 5 propositions and 3 chains with provenance into the chat `Flow matching for video generation`.
+- `node gen-media/tools/verify/seed-graph.mjs <state.json>` ran. It seeds 5 propositions and 3 chains with provenance into the chat `Flow matching for video generation`.
 
 - **Canvas.** Open home and `waitFor(page, "role=button[name='Chains']")`. The canvas shows nodes and the label `Flow matching for video generation`.
 - **Chain table.** Run `click(page, "role=button[name='Chains']")` then `waitFor(page, "text=3 chains · 5 nodes")`.

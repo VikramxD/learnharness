@@ -11,7 +11,7 @@ Harness keeps its records in the plugin's `data/` folder:
 - `papers/<arxiv id>/paper.pdf` and `frameworks/<name>@<shortsha>/` hold downloaded PDFs and read-only checkouts.
 - `vault-manifest.json` records every vault note Harness wrote, with its hash.
 
-Evidence files follow `contracts/evidence/README.md`. Harness validates them with `contracts/evidence/validate.mjs`, which the build bundles.
+Evidence files follow `gen-media/contracts/evidence/README.md`. Harness validates them with `gen-media/contracts/evidence/validate.mjs`, which the build bundles.
 
 ## Build
 

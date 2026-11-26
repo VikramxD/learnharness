@@ -1,4 +1,4 @@
-import * as contract from "../../../contracts/evidence/validate.mjs";
+import * as contract from "../../../gen-media/contracts/evidence/validate.mjs";
 
 export type Validation = { ok: true; evidence: Record<string, unknown> } | { ok: false; errors: string[] };
 

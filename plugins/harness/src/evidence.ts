@@ -1,6 +1,6 @@
 import * as fs from "node:fs/promises";
 import path from "node:path";
-import { validateEvidence } from "../../../contracts/evidence/validate.mjs";
+import { validateEvidence } from "../../../gen-media/contracts/evidence/validate.mjs";
 import { ingestEvidence, type DraftEvent, type LedgerState, type ValidationResult } from "./domain.ts";
 import { exists, readDirectories, sha256 } from "./files.ts";
 import type { LedgerStore } from "./store.ts";

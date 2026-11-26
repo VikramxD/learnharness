@@ -16,7 +16,7 @@ A user starts a teaching session from the home composer. The prober agent answer
 
 Preconditions:
 
-- Booted with `--script tools/verify/fixtures/fake-tool-turn.json`. The composer model picker shows `fake-model`.
+- Booted with `--script gen-media/tools/verify/fixtures/fake-tool-turn.json`. The composer model picker shows `fake-model`.
 
 - **Start.** Run `fill(page, "role=textbox[name='What do you want to learn?']", "Teach me flow matching")` then `click(page, "role=button[name='Start session']")`. The header shows the session title and `PROBING`.
 - **Tool and reply.** Run `waitFor(page, "text=Scripted reply after a tool call", { timeout: 30000 })`. A `LIST_SESSIONS` row sits above the reply.

@@ -25,7 +25,7 @@ print("LH_EVIDENCE " + json.dumps({"outcome": "pass", "metric": "step time", "un
     "baseline": 41.8, "result": 33.5, "hardware": "1x NVIDIA L4", "why": "Fused the norm into the matmul."}))
 ```
 
-Print it from the Modal function, not from a `local_entrypoint`, so the line reaches `modal app logs` even when LearnHarness was closed. Run Desk adds `schema`, `entry`, `stage`, `producedAt` (when it saw the app finish), `source` (the script's git repo and the `HEAD` commit at launch) and `command`, then validates the file with `contracts/evidence/validate.mjs`.
+Print it from the Modal function, not from a `local_entrypoint`, so the line reaches `modal app logs` even when LearnHarness was closed. Run Desk adds `schema`, `entry`, `stage`, `producedAt` (when it saw the app finish), `source` (the script's git repo and the `HEAD` commit at launch) and `command`, then validates the file with `gen-media/contracts/evidence/validate.mjs`.
 
 | What the run printed | Run status | Evidence file |
 | --- | --- | --- |

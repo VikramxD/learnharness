@@ -4,13 +4,13 @@ This directory is the maintained source for proving plugin behavior in an isolat
 
 ## Baseline preconditions
 
-- Boot with `node tools/verify/boot.mjs --plugins <dirs>` and keep the printed `state=` path.
-- `node tools/verify/doctor.mjs <state.json>` exits 0.
+- Boot with `node gen-media/tools/verify/boot.mjs --plugins <dirs>` and keep the printed `state=` path.
+- `node gen-media/tools/verify/doctor.mjs <state.json>` exits 0.
 - Never drive an instance this run did not boot. The user's own LearnHarness runs under the same process name.
 
 ## Driving conventions
 
-- Drive through `tools/verify/drive.mjs` with `role=` and `text=` selectors.
+- Drive through `gen-media/tools/verify/drive.mjs` with `role=` and `text=` selectors.
 - Wait for a locator, never for network idle.
 - Start each recipe from home (`page.goto(state.url)`).
 

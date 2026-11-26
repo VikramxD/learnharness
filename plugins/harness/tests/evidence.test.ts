@@ -3,12 +3,12 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
 import type { PluginLearningData } from "learnharness-plugin-api";
-import { evidenceFileName } from "../../../contracts/evidence/validate.mjs";
+import { evidenceFileName } from "../../../gen-media/contracts/evidence/validate.mjs";
 import { createEntries, parseEntryId, stagesOf, type Entry } from "../src/domain.ts";
 import { createHarness } from "../src/service.ts";
 import { pluginRoot, repoRoot, tempDirectory } from "./helpers.ts";
 
-const example = async (name: string) => JSON.parse(await readFile(path.join(repoRoot, "contracts/evidence/examples", name), "utf8"));
+const example = async (name: string) => JSON.parse(await readFile(path.join(repoRoot, "gen-media/contracts/evidence/examples", name), "utf8"));
 
 async function place(root: string, evidence: { entry: string; stage: string; producedAt: string }, body: unknown = evidence) {
   const directory = path.join(root, evidence.entry, evidence.stage);

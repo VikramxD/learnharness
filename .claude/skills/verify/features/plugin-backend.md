@@ -16,7 +16,7 @@ A plugin's backend registers operations with `ctx.handle`. Its frontend reaches 
 
 Preconditions:
 
-- Booted with `--plugins tools/verify/fixtures/echo-plugin` (id `verify-echo`) or your plugin.
+- Booted with `--plugins gen-media/tools/verify/fixtures/echo-plugin` (id `verify-echo`) or your plugin.
 
 - **Call.** Run `callPlugin(state.url, "verify-echo", "echo", { ping: 1 })`. The result is `{ echoed: { ping: 1 }, dataDirectory: "<dataDir>/plugins/verify-echo/data" }`.
 - **Unknown op.** Run `callPlugin(state.url, "verify-echo", "nope")`. It throws with `Unknown plugin operation: nope`.
