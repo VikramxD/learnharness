@@ -1,7 +1,8 @@
 import * as fs from "node:fs/promises";
 import path from "node:path";
 import type { GraphChain, GraphNode } from "learnharness-plugin-api";
-import { BUILD_STAGES, type BuildStage, type BuildStatus, type Entry, type EntryId, type Evidence } from "./domain.ts";
+import { BUILD_STAGES, type BuildStage, type BuildStatus, type Entry, type EntryId } from "./domain.ts";
+import { evidenceSummary } from "./evidence-text.ts";
 import { sha256, writeFileAtomic } from "./files.ts";
 import type { EntryRow } from "./projection.ts";
 
@@ -22,14 +23,6 @@ function frontmatter(fields: Record<string, string | string[] | undefined>): str
 
 const safeName = (text: string) => text.replace(/[\\/:*?"<>|#^[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120).trim();
 const link = (notePath: string) => `[[${path.basename(notePath, ".md")}]]`;
-
-export function evidenceSummary(evidence: Evidence): string {
-  switch (evidence.stage) {
-    case "implement": return `${evidence.tests.passed}/${evidence.tests.total} tests against ${evidence.reference}`;
-    case "optimize": return `${evidence.metric} ${evidence.result} ${evidence.unit} vs baseline ${evidence.baseline} ${evidence.unit} (${evidence.better} is better) on ${evidence.hardware}`;
-    case "serve": return `p50 ${evidence.p50Ms} ms, p95 ${evidence.p95Ms} ms, ${evidence.throughput.value} ${evidence.throughput.unit}, $${evidence.costPer1k.usd} per 1k on ${evidence.hardware}`;
-  }
-}
 
 const buildCell = (status: BuildStatus) => (status.state === "open" ? "open" : `${status.state}: ${evidenceSummary(status.evidence.evidence)}`);
 

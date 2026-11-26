@@ -206,6 +206,9 @@ export function createHarness(deps: HarnessDeps) {
       }
       return { entryId: entry.id, title: entry.title, ...paths };
     },
+    async localPaths(input: unknown) {
+      return desk.localPaths(entryOf(await store.read(), requiredEntryId(input)));
+    },
     async ledgerStatus(input: unknown) {
       const state = await store.read();
       const rows = ledgerSnapshot(state).entries;
