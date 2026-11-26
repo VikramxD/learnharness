@@ -25,6 +25,7 @@ export async function mountSettingsView(ctx: PluginFrontendContext, container: H
   const schema = (): PluginSettingsSchema => ({
     rows: [
       { type: "text", key: "vaultPath", label: "Vault path", description: "Harness writes only under <vault>/LearnHarness/.", value: current.vaultPath, validate: absolute, onChange: value => save({ vaultPath: value }) },
+      { type: "toggle", key: "autoSync", label: "Sync vault after every ledger change", description: "Turns on when you set the vault path or press Sync vault. Writes only under <vault>/LearnHarness/.", value: current.autoSync, onChange: value => save({ autoSync: value }) },
       { type: "text", key: "feedKeywords", label: "Feed keywords", description: "Comma-separated words for the Material Desk's new-paper feed.", value: current.feedKeywords.join(", "), onChange: value => save({ feedKeywords: value.split(",") }) },
     ],
   });

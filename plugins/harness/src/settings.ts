@@ -7,6 +7,7 @@ export interface HarnessSettings {
   vaultPath: string;
   evidenceRoots: string[];
   feedKeywords: string[];
+  autoSync: boolean;
 }
 
 export function defaultSettings(learningDirectory: string): HarnessSettings {
@@ -14,6 +15,7 @@ export function defaultSettings(learningDirectory: string): HarnessSettings {
     vaultPath: path.join(os.homedir(), "Documents", "vikramxd-vault"),
     evidenceRoots: [path.join(learningDirectory, "plugins", "run-desk", "data", "evidence")],
     feedKeywords: ["diffusion", "flow matching", "video generation", "world model", "GRPO", "DPO", "reward model"],
+    autoSync: false,
   };
 }
 
@@ -43,7 +45,14 @@ export function parseSettingsInput(input: unknown, current: HarnessSettings): Ha
   if (typeof input !== "object" || input === null) throw new Error("Settings must be an object.");
   const change = input as Record<string, unknown>;
   const next = { ...current };
-  if ("vaultPath" in change) next.vaultPath = absolutePath(change.vaultPath, "Vault path");
+  if ("vaultPath" in change) {
+    next.vaultPath = absolutePath(change.vaultPath, "Vault path");
+    next.autoSync = true;
+  }
+  if ("autoSync" in change) {
+    if (typeof change.autoSync !== "boolean") throw new Error("Auto sync must be true or false.");
+    next.autoSync = change.autoSync;
+  }
   if ("evidenceRoots" in change) {
     if (!Array.isArray(change.evidenceRoots)) throw new Error("Evidence roots must be a list of paths.");
     next.evidenceRoots = [...new Set(change.evidenceRoots.map(root => absolutePath(root, "Evidence root")))];

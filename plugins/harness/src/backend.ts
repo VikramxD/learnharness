@@ -21,6 +21,7 @@ export function activate(ctx: PluginBackendContext): () => void {
   const timer = setInterval(rescanQuietly, RESCAN_INTERVAL_MS);
   return () => {
     clearInterval(timer);
+    harness.dispose();
     for (const dispose of unregister.reverse()) dispose();
   };
 }

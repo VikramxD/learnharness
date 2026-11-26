@@ -24,6 +24,7 @@ export interface HarnessDeps {
   arxiv?: ArxivClient;
   fetcher?: typeof fetch;
   now?: () => Date;
+  syncDelayMs?: number;
 }
 
 export function createHarness(deps: HarnessDeps) {
@@ -34,13 +35,33 @@ export function createHarness(deps: HarnessDeps) {
   const questions = new Map(seed.map(s => [s.entry.id as string, s.question]));
   const arxiv = deps.arxiv ?? new ArxivClient();
   const desk = new MaterialDesk(deps.dataDirectory, arxiv, deps.fetcher);
+  const vault = new VaultWriter(path.join(deps.dataDirectory, "vault-manifest.json"));
+  let syncTimer: ReturnType<typeof setTimeout> | undefined;
+  let syncQueue: Promise<unknown> = Promise.resolve();
+  const syncNow = (): Promise<SyncReport> => {
+    const run = syncQueue.then(async () => vault.sync((await settings()).vaultPath, (await mirror()).notes));
+    syncQueue = run.catch(() => undefined);
+    return run;
+  };
+  const scheduleSync = () => {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      void settings()
+        .then(s => (s.autoSync ? syncNow() : undefined))
+        .catch(error => console.error("[harness] vault sync failed:", error));
+    }, deps.syncDelayMs ?? 5000);
+    syncTimer.unref?.();
+  };
+  const changed = () => {
+    deps.notify(LEDGER_TOPIC);
+    scheduleSync();
+  };
   const create = async (entries: Entry[]) => {
     const { appended } = await store.transact(state => createEntries(state, entries));
-    if (appended.length) deps.notify(LEDGER_TOPIC);
+    if (appended.length) changed();
     return appended.length;
   };
   const sessions = new SessionReader(deps.learning);
-  const vault = new VaultWriter(path.join(deps.dataDirectory, "vault-manifest.json"));
   const mirror = async () => {
     const graph = deps.learning.graph();
     return mirrorNotes({ rows: ledgerSnapshot(await store.read()).entries, propositions: graph.propositions, chains: graph.chains, sessionTitles: graph.sessions });
@@ -61,7 +82,7 @@ export function createHarness(deps: HarnessDeps) {
 
   const rescan = async (): Promise<ScanReport> => {
     lastScan = await scanEvidence(store, (await settings()).evidenceRoots);
-    if (lastScan.accepted + lastScan.rejected) deps.notify(LEDGER_TOPIC);
+    if (lastScan.accepted + lastScan.rejected) changed();
     return lastScan;
   };
 
@@ -141,20 +162,20 @@ export function createHarness(deps: HarnessDeps) {
     async linkSession(input: unknown) {
       const entryId = requiredEntryId(input), chatId = requiredText(input, "chatId");
       const { appended } = await store.transact(state => linkSession(state, entryId, chatId));
-      if (appended.length) deps.notify(LEDGER_TOPIC);
+      if (appended.length) changed();
       return { linked: appended.length > 0 };
     },
     async unlinkSession(input: unknown) {
       const entryId = requiredEntryId(input), chatId = requiredText(input, "chatId");
       const { appended } = await store.transact(state => unlinkSession(state, entryId, chatId));
-      if (appended.length) deps.notify(LEDGER_TOPIC);
+      if (appended.length) changed();
       return { unlinked: appended.length > 0 };
     },
     async markUnderstood(input: unknown) {
       const entryId = requiredEntryId(input);
       const view = await sessionView(await store.read(), entryId);
       await store.transact(state => markUnderstood(state, entryId, state.links[entryId] ?? [], view.chainIds));
-      deps.notify(LEDGER_TOPIC);
+      changed();
       return { chainIds: view.chainIds };
     },
     async teachingGoal(input: unknown) {
@@ -167,7 +188,9 @@ export function createHarness(deps: HarnessDeps) {
       };
     },
     async syncVault(): Promise<SyncReport> {
-      return vault.sync((await settings()).vaultPath, (await mirror()).notes);
+      const current = await settings();
+      if (!current.autoSync) await writeSettings(deps.dataDirectory, { ...current, autoSync: true });
+      return syncNow();
     },
     async handOff(input: unknown) {
       const entryId = requiredEntryId(input);
@@ -185,7 +208,7 @@ export function createHarness(deps: HarnessDeps) {
       });
       const notePath = await vault.writeOnce(vaultPath, handoffPath(date, topic), content);
       const { appended } = await store.transact(state => recordHandoff(state, entryId, notePath));
-      if (appended.length) deps.notify(LEDGER_TOPIC);
+      if (appended.length) changed();
       return { notePath };
     },
     async materialFetch(input: unknown) {
@@ -227,7 +250,7 @@ export function createHarness(deps: HarnessDeps) {
     },
   } satisfies Record<string, (input: unknown) => unknown>;
 
-  return { store, operations, rescan, desk, sessions };
+  return { store, operations, rescan, desk, sessions, dispose: () => clearTimeout(syncTimer) };
 }
 
 export type Harness = ReturnType<typeof createHarness>;

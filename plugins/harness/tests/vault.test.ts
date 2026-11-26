@@ -9,7 +9,7 @@ import { pluginRoot, tempDirectory } from "./helpers.ts";
 const node = (id: string, name: string, statement: string): GraphNode => ({ id, name, statement, aliases: [], createdAt: "", provenance: [] });
 const chain = (id: string, premises: string[], conclusion: string, chatId: string): GraphChain => ({ id, premises, conclusion, provenance: [{ chatId, messageId: "m" }], createdAt: "" });
 
-async function setup(t: Parameters<typeof tempDirectory>[0]) {
+async function setup(t: Parameters<typeof tempDirectory>[0], options: { syncDelayMs?: number; saveVault?: boolean } = {}) {
   const base = await tempDirectory(t, "harness-vault-");
   const vault = path.join(base, "vault");
   await mkdir(vault);
@@ -30,7 +30,12 @@ async function setup(t: Parameters<typeof tempDirectory>[0]) {
     getSession: () => null,
     graph: () => graph,
   } as unknown as PluginLearningData;
-  const harness = createHarness({ directory: pluginRoot, dataDirectory: path.join(base, "data"), learning, notify() {}, now: () => new Date(2026, 10, 26, 12) });
+  const harness = createHarness({ directory: pluginRoot, dataDirectory: path.join(base, "data"), learning, notify() {}, now: () => new Date(2026, 10, 26, 12), syncDelayMs: options.syncDelayMs ?? 60_000 });
+  t.after(() => harness.dispose());
+  if (options.saveVault === false) {
+    await harness.operations.seed();
+    return { base, vault, harness };
+  }
   await harness.operations.seed();
   await harness.operations.saveSettings({ vaultPath: vault });
   await harness.operations.linkSession({ entryId: "paper.2006.11239", chatId: "c1" });
@@ -148,4 +153,24 @@ test("the mirror refuses a vault that does not exist", async t => {
   const { base, harness } = await setup(t);
   await harness.operations.saveSettings({ vaultPath: path.join(base, "missing") });
   await assert.rejects(harness.operations.syncVault(), /does not exist/);
+});
+
+const settle = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+test("after the vault path is set, a ledger change syncs the vault on its own", async t => {
+  const { vault, harness } = await setup(t, { syncDelayMs: 20 });
+  await settle(200);
+  const index = await readFile(path.join(vault, "LearnHarness", "LearnHarness - Index.md"), "utf8").catch(() => "");
+  assert.notEqual(index, "", "the index note exists without pressing Sync vault");
+  assert.equal((await harness.operations.getSettings()).autoSync, true);
+});
+
+test("before the vault path is confirmed, ledger changes do not touch the vault", async t => {
+  const { vault, harness } = await setup(t, { syncDelayMs: 20, saveVault: false });
+  await harness.operations.linkSession({ entryId: "paper.2006.11239", chatId: "c1" });
+  await settle(200);
+  assert.deepEqual(await readdir(vault), ["Auteur - Architecture.md"]);
+  assert.equal((await harness.operations.getSettings()).autoSync, false);
+  await harness.operations.syncVault();
+  assert.equal((await harness.operations.getSettings()).autoSync, true, "pressing Sync vault turns auto-sync on");
 });
