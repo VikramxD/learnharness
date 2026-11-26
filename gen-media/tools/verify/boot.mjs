@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
 import os from "node:os";
@@ -7,12 +7,11 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { loadScript } from "./fake-model.mjs";
+import { assertIsolated } from "./isolation.mjs";
 import { teardown } from "./teardown.mjs";
 
-const APP = process.env.LH_VERIFY_APP ?? "/Applications/LearnHarness.app";
-const RESOURCES = path.join(APP, "Contents/Resources");
-const STANDALONE = path.join(RESOURCES, "server/standalone");
-const BINARY = path.join(APP, "Contents/MacOS/LearnHarness");
+export const RELEASED_APP = process.env.LH_VERIFY_APP ?? "/Applications/LearnHarness.app";
+export const BUILD_STAMP = "product-build.json";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT_PREFIX = "lh-verify-";
 
@@ -37,6 +36,7 @@ export function freePort(requested = 0) {
 export function seedDataDir(root, plugins) {
 	const data = path.join(root, "data");
 	fs.mkdirSync(path.join(root, "home"), { recursive: true });
+	fs.mkdirSync(data, { recursive: true });
 	for (const { id, dist } of plugins) fs.cpSync(dist, path.join(data, "plugins", id, "dist"), { recursive: true });
 	fs.writeFileSync(path.join(data, "plugins-state.json"), JSON.stringify({ version: 1, enabled: Object.fromEntries(plugins.map((p) => [p.id, true])) }));
 	fs.writeFileSync(path.join(data, "settings.json"), JSON.stringify({ version: 1, general: { autoUpdate: false } }));
@@ -51,12 +51,11 @@ function spawnDetached(command, args, { env, cwd, log }) {
 	return child.pid;
 }
 
-function serverEnv(root, data, port) {
+function isolationEnv(root, data, port) {
 	return {
 		PATH: process.env.PATH,
 		TMPDIR: os.tmpdir(),
 		HOME: path.join(root, "home"),
-		ELECTRON_RUN_AS_NODE: "1",
 		NODE_ENV: "production",
 		PORT: String(port),
 		HOSTNAME: "127.0.0.1",
@@ -64,6 +63,61 @@ function serverEnv(root, data, port) {
 		LH_AUTH_FILE: path.join(root, "auth.json"),
 		LH_IGNORE_ENV_KEYS: "1",
 	};
+}
+
+const LAUNCHERS = {
+	released({ app }) {
+		const resources = path.join(app, "Contents/Resources");
+		const standalone = path.join(resources, "server/standalone");
+		return {
+			binary: path.join(app, "Contents/MacOS/LearnHarness"),
+			args: ["--require", path.join(resources, "server-title-guard.cjs"), path.join(standalone, "server.js")],
+			cwd: standalone,
+			env: { ELECTRON_RUN_AS_NODE: "1" },
+		};
+	},
+	source({ repo }) {
+		const standalone = path.join(repo, ".next/standalone");
+		return { binary: process.execPath, args: [path.join(standalone, "server.js")], cwd: standalone, env: {} };
+	},
+};
+
+/** target is {kind:"released", app} or {kind:"source", repo}; the result is everything spawn needs. */
+export function resolveTarget(target, env) {
+	const launch = LAUNCHERS[target.kind];
+	if (!launch) throw new Error(`unknown boot target kind: ${target.kind}`);
+	const spec = launch(target);
+	return { ...spec, env: { ...env, ...spec.env } };
+}
+
+const git = (repo, ...args) => execFileSync("git", ["-C", repo, ...args], { encoding: "utf8" }).trim();
+
+export function sourceRevision(repo) {
+	return { commit: git(repo, "rev-parse", "HEAD"), dirty: git(repo, "status", "--porcelain") !== "" };
+}
+
+function readStamp(repo) {
+	try {
+		return JSON.parse(fs.readFileSync(path.join(repo, ".next/standalone", BUILD_STAMP), "utf8"));
+	} catch {
+		return null;
+	}
+}
+
+/** Builds the fork's standalone server unless the stamp already matches a clean HEAD. Build output goes to stderr. */
+export function ensureSourceBuild(repo, { rebuild = false } = {}) {
+	const revision = sourceRevision(repo);
+	const stamp = readStamp(repo);
+	if (!rebuild && !revision.dirty && stamp?.commit === revision.commit && fs.existsSync(path.join(repo, ".next/standalone/server.js"))) {
+		return { built: false, stamp };
+	}
+	const { NODE_ENV, ...env } = process.env;
+	const run = (command, args) => execFileSync(command, args, { cwd: repo, env, stdio: ["ignore", process.stderr, process.stderr] });
+	run("npm", ["run", "build"]);
+	run(process.execPath, ["scripts/build-server.mjs"]);
+	const fresh = { ...revision, builtAt: new Date().toISOString() };
+	fs.writeFileSync(path.join(repo, ".next/standalone", BUILD_STAMP), JSON.stringify(fresh, null, "\t") + "\n");
+	return { built: true, stamp: fresh };
 }
 
 async function getJson(url) {
@@ -107,14 +161,18 @@ async function wireFakeModel(url, baseUrl, model) {
 	if (!models.ok) throw new Error(`model slots -> ${models.status} ${await models.text()}`);
 }
 
-export async function boot({ plugins: pluginDirs, port, script, vault, timeoutMs = 60_000 }) {
+export async function boot({ source, app = RELEASED_APP, rebuild = false, plugins: pluginDirs = [], port, script, vault, timeoutMs = 60_000 }) {
 	const plugins = pluginDirs.map(resolvePluginDist);
+	const target = source ? { kind: "source", repo: path.resolve(source) } : { kind: "released", app };
+	const build = target.kind === "source" ? ensureSourceBuild(target.repo, { rebuild }) : null;
+	assertIsolated(os.tmpdir());
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), ROOT_PREFIX));
-	const state = { version: 1, root, pids: [], startedAt: new Date().toISOString() };
+	const state = { version: 1, root, target, build: build?.stamp ?? null, pids: [], startedAt: new Date().toISOString() };
 	const statePath = path.join(root, "state.json");
 	const save = () => fs.writeFileSync(statePath, JSON.stringify(state, null, "\t"));
 	save();
 	try {
+		for (const dir of [path.join(root, "data"), path.join(root, "auth.json"), path.join(root, "vault")]) assertIsolated(dir);
 		state.dataDir = seedDataDir(root, plugins);
 		if (vault) {
 			state.vault = path.join(root, "vault");
@@ -123,11 +181,8 @@ export async function boot({ plugins: pluginDirs, port, script, vault, timeoutMs
 		state.port = await freePort(port);
 		state.url = `http://127.0.0.1:${state.port}`;
 		state.serverLog = path.join(root, "server.log");
-		const server = spawnDetached(BINARY, ["--require", path.join(RESOURCES, "server-title-guard.cjs"), path.join(STANDALONE, "server.js")], {
-			cwd: STANDALONE,
-			env: serverEnv(root, state.dataDir, state.port),
-			log: state.serverLog,
-		});
+		const launch = resolveTarget(target, isolationEnv(root, state.dataDir, state.port));
+		const server = spawnDetached(launch.binary, launch.args, { cwd: launch.cwd, env: launch.env, log: state.serverLog });
 		state.pids.push(server);
 		save();
 		if (script) {
@@ -155,21 +210,32 @@ export async function boot({ plugins: pluginDirs, port, script, vault, timeoutMs
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
 	const { values } = parseArgs({
-		options: { plugins: { type: "string" }, port: { type: "string" }, script: { type: "string" }, vault: { type: "string" }, timeout: { type: "string" } },
+		options: {
+			source: { type: "string" },
+			rebuild: { type: "boolean" },
+			plugins: { type: "string" },
+			port: { type: "string" },
+			script: { type: "string" },
+			vault: { type: "string" },
+			timeout: { type: "string" },
+		},
 	});
-	if (!values.plugins) {
-		console.error("usage: boot.mjs --plugins <dir1,dir2> [--port N] [--script <fake-model.json>] [--vault <dir>] [--timeout ms]");
+	if (values.rebuild && !values.source) {
+		console.error("usage: boot.mjs [--source <repo> [--rebuild]] [--plugins <dir1,dir2>] [--port N] [--script <fake-model.json>] [--vault <dir>] [--timeout ms]");
 		process.exit(2);
 	}
 	try {
 		const state = await boot({
-			plugins: values.plugins.split(",").filter(Boolean).map((p) => path.resolve(p)),
+			source: values.source,
+			rebuild: values.rebuild,
+			plugins: (values.plugins ?? "").split(",").filter(Boolean).map((p) => path.resolve(p)),
 			port: values.port ? Number(values.port) : undefined,
 			script: values.script,
 			vault: values.vault,
 			timeoutMs: values.timeout ? Number(values.timeout) : undefined,
 		});
-		console.log(`ready ${state.url} plugins=${state.plugins.map((p) => `${p.id}:${p.status}`).join(",")} state=${state.statePath}`);
+		const target = state.target.kind === "source" ? `source:${state.build.commit.slice(0, 12)}${state.build.dirty ? "+dirty" : ""}` : "released";
+		console.log(`ready ${state.url} target=${target} plugins=${state.plugins.map((p) => `${p.id}:${p.status}`).join(",")} state=${state.statePath}`);
 	} catch (error) {
 		console.error(`boot failed: ${error.message}`);
 		process.exit(1);

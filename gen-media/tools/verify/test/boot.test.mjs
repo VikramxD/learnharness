@@ -42,6 +42,17 @@ test("boot serves an active plugin from an isolated root and teardown removes ev
 	assert(!fs.existsSync(state.root), "temp root removed");
 });
 
+test("boot with zero plugins still waits for a serving server", async () => {
+	const state = await boot({});
+	try {
+		assert.deepEqual(state.plugins, []);
+		assert.equal(state.target.kind, "released");
+		assert.equal((await fetch(`${state.url}/api/plugins`)).status, 200);
+	} finally {
+		await teardown(state.statePath);
+	}
+});
+
 test("two boots run side by side on different ports", async () => {
 	const [a, b] = await Promise.all([boot({ plugins: [ECHO] }), boot({ plugins: [ECHO] })]);
 	try {
