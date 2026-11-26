@@ -115,6 +115,8 @@ export function ensureSourceBuild(repo, { rebuild = false } = {}) {
 	const run = (command, args) => execFileSync(command, args, { cwd: repo, env, stdio: ["ignore", process.stderr, process.stderr] });
 	run("npm", ["run", "build"]);
 	run(process.execPath, ["scripts/build-server.mjs"]);
+	// next build rewrites the committed dev variant of next-env.d.ts; left alone, the tree reads dirty and every boot rebuilds.
+	if (!revision.dirty) git(repo, "checkout", "--", "next-env.d.ts");
 	const fresh = { ...revision, builtAt: new Date().toISOString() };
 	fs.writeFileSync(path.join(repo, ".next/standalone", BUILD_STAMP), JSON.stringify(fresh, null, "\t") + "\n");
 	return { built: true, stamp: fresh };
