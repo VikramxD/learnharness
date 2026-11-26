@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// A stand-in for the Modal CLI that runs the "remote" script locally with python3. It never contacts Modal.
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { appendFileSync, readFileSync, renameSync, writeFileSync } from "node:fs";

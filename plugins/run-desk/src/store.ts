@@ -3,7 +3,6 @@ import path from "node:path";
 
 export interface JsonFile<T> {
   read(): Promise<T>;
-  /** Serialized read-modify-write, so the poller and handlers never drop each other's changes. */
   update(change: (current: T) => T | Promise<T>): Promise<T>;
 }
 

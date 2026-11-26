@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { realpathSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
@@ -117,4 +117,20 @@ test("launch refuses a stale confirmation or a script outside git, and never cal
   await writeFile(loose, "print(1)\n");
   await assert.rejects(createRunDesk({ ...deps, gitSource: async () => { throw new Error("not a git repo"); } }).launch(template(loose), confirm), /not a git repo/);
   assert.equal(fake.calls().filter(call => call[0] === "run").length, 0);
+});
+
+test("a finish interrupted after the evidence write converges on the same single evidence file", async t => {
+  const { desk, deps, script, dataDirectory } = await setup(t, `${optimizeLine()}\n`);
+  const running = await desk.launch(template(script), confirm);
+  const done = await until(async () => { await desk.poll(); return desk.get(running.id); }, finished);
+  const runsFile = path.join(deps.dataDirectory, "runs.json");
+  const state = JSON.parse(await readFile(runsFile, "utf8"));
+  const { evidenceFile, outcome, ...interrupted } = state.runs[0];
+  await writeFile(runsFile, JSON.stringify({ version: 1, runs: [{ ...interrupted, status: "running" }] }));
+  const restarted = createRunDesk({ ...deps, now: () => new Date(Date.now() + 5000) });
+  await restarted.poll();
+  const again = await restarted.get(running.id);
+  assert.equal(again.status, "succeeded");
+  assert.equal(again.evidenceFile, done.evidenceFile);
+  assert.deepEqual(await readdir(path.join(dataDirectory, path.dirname(done.evidenceFile!))), [path.basename(done.evidenceFile!)]);
 });

@@ -19,7 +19,6 @@ export interface LaunchRequest {
   onExit: (code: number | null) => void;
 }
 
-/** Everything Run Desk asks of Modal. Tests and the live lanes swap in a fake CLI binary. */
 export interface ModalCli {
   launchArgs(appName: string, script: string, args: string[]): string[];
   launch(request: LaunchRequest): Promise<{ appId: string }>;
@@ -51,7 +50,7 @@ export function parseAppList(stdout: string): ModalApp[] {
   });
 }
 
-/** Modal labels a finished ephemeral app "stopped"; "stopping..." is still winding down. */
+/** Labels from APP_STATE_TO_MESSAGE in modal/cli/app.py (CLI 1.6.1): a finished app is "stopped", one winding down is "stopping...". */
 export const isStoppedState = (state: string) => state === "stopped";
 
 export function modalCli(program: string): ModalCli {
@@ -59,7 +58,6 @@ export function modalCli(program: string): ModalCli {
   return {
     launchArgs,
     async launch({ appName, script, args, cwd, env, logFile, onExit }) {
-      // The child writes straight to a file so it outlives this server; `--detach` keeps the app alive regardless.
       const fd = openSync(logFile, "a");
       let exited: number | null | undefined;
       let launchError: Error | undefined;

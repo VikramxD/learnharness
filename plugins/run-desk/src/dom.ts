@@ -1,6 +1,5 @@
 type Child = Node | string | false | undefined | null;
 
-/** Create an element with a class name, attributes and children; `false`/`undefined` children are skipped. */
 export function h<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   props: { class?: string } & Record<string, string | undefined> = {},

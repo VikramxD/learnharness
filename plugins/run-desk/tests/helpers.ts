@@ -16,7 +16,6 @@ export async function tempDirectory(t: TestContext, prefix = "run-desk-"): Promi
   return directory;
 }
 
-/** A private copy of the fake Modal CLI, with its own app state and call log. */
 export function installFakeModal(directory: string): { program: string; calls: () => string[][] } {
   const program = path.join(directory, "fake-modal.mjs");
   copyFileSync(path.join(testsDirectory, "fake-modal.mjs"), program);
@@ -28,7 +27,6 @@ export function installFakeModal(directory: string): { program: string; calls: (
   };
 }
 
-/** A git repo holding a Python script that the fake CLI runs as the remote job. */
 export function scriptRepo(directory: string, body: string): { script: string; commit: string } {
   const repo = path.join(directory, "repo");
   mkdirSync(repo, { recursive: true });

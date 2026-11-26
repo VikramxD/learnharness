@@ -7,7 +7,6 @@ export const EVIDENCE_MARKER = "LH_EVIDENCE";
 
 export type EvidenceLine = { fields: Record<string, unknown> } | { error: string };
 
-/** The last `LH_EVIDENCE {json}` line in the logs, wherever the log prefix puts it. */
 export function findEvidenceLine(logs: string): EvidenceLine | undefined {
   const line = logs.split(/\r?\n/).reverse().find(candidate => candidate.includes(`${EVIDENCE_MARKER} `));
   if (line === undefined) return undefined;
@@ -26,10 +25,6 @@ export type Assembled =
   | { kind: "downgraded"; evidence: Record<string, unknown>; errors: string[] }
   | { kind: "invalid"; errors: string[] };
 
-/**
- * Run Desk owns schema, entry, stage, producedAt, source and command; the script owns the rest.
- * A result that breaks the contract is kept as a fail when that is still a valid file.
- */
 export function assembleEvidence(run: Run, line: EvidenceLine | undefined, producedAt: string): Assembled {
   const lineErrors = line === undefined ? [`The run printed no ${EVIDENCE_MARKER} line.`] : "error" in line ? [line.error] : [];
   const fields = line && "fields" in line ? line.fields : {};
@@ -49,8 +44,7 @@ export function assembleEvidence(run: Run, line: EvidenceLine | undefined, produ
   return asFail.ok ? { kind: "downgraded", evidence: { ...claimed, outcome: "fail" }, errors } : { kind: "invalid", errors };
 }
 
-/** Write once to `evidence/<entry>/<stage>/<file>.json`; a rerun finds the same file and leaves it. */
-export async function writeEvidence(dataDirectory: string, evidence: Record<string, unknown>): Promise<string> {
+export async function writeEvidenceOnce(dataDirectory: string, evidence: Record<string, unknown>): Promise<string> {
   const relative = path.join("evidence", String(evidence.entry), String(evidence.stage), evidenceFileName(String(evidence.producedAt)));
   const target = path.join(dataDirectory, relative);
   const body = `${JSON.stringify(evidence, null, 2)}\n`;

@@ -20,7 +20,6 @@ function actions(ctx: PluginFrontendContext, signal: AbortSignal, buttons: { lab
   return { row, handles };
 }
 
-/** Create or edit a template; calls onSaved after a valid save. */
 export function openTemplateDialog(ctx: PluginFrontendContext, existing: Template | undefined, onSaved: () => void): void {
   const handle = ctx.ui.openDialog({
     title: existing ? "Edit run template" : "New run template",
@@ -66,7 +65,6 @@ export function openTemplateDialog(ctx: PluginFrontendContext, existing: Templat
   }, { signal: ctx.signal });
 }
 
-/** The only way to start a run: shows GPU, hourly estimate and the max-runtime cap, and launches only on an explicit click. */
 export function openLaunchDialog(ctx: PluginFrontendContext, template: Template, onLaunched: (run: Run) => void): void {
   const handle = ctx.ui.openDialog({
     title: `Launch ${template.name}`,

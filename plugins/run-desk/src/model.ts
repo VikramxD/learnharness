@@ -18,7 +18,6 @@ export interface Template {
 
 export type RunStatus = "queued" | "running" | "succeeded" | "failed" | "stopped";
 
-/** Each status lists the statuses it may move to; finished statuses list none. */
 export const TRANSITIONS: Record<RunStatus, readonly RunStatus[]> = {
   queued: ["running", "failed", "stopped"],
   running: ["succeeded", "failed", "stopped"],
@@ -31,7 +30,6 @@ export const isFinished = (status: RunStatus) => TRANSITIONS[status].length === 
 
 export interface Run {
   id: string;
-  /** A copy of the template at launch, so later edits never rewrite history. */
   template: Template;
   appName: string;
   appId?: string;
@@ -62,7 +60,6 @@ export function estimatedCostUsd(run: Run, now: Date): number {
 
 export const capCostUsd = (hourlyUsd: number, maxRuntimeMinutes: number) => (hourlyUsd * maxRuntimeMinutes) / 60;
 
-/** Entry ids follow the evidence contract; ask the contract instead of copying its pattern. */
 export function entryIdError(entry: string): string | undefined {
   const probe = validateEvidence({ schema: SCHEMA, entry });
   return probe.ok ? undefined : probe.errors.find(message => message.startsWith("entry"));
@@ -70,7 +67,6 @@ export function entryIdError(entry: string): string | undefined {
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 
-/** Parse a template from the frontend; the only place template fields are checked. */
 export function parseTemplate(input: unknown, id: string): { template: Template } | { errors: string[] } {
   const raw = (typeof input === "object" && input !== null ? input : {}) as Record<string, unknown>;
   const errors: string[] = [];

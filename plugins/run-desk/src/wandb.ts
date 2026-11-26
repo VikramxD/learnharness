@@ -23,7 +23,6 @@ export type WandbReport =
   | { status: "error"; error: string }
   | { status: "ok"; path: string; state: string; summary: Record<string, number>; loss?: LossCurve };
 
-/** The api.wandb.ai password from a netrc file, or undefined. The key never leaves this module. */
 export function netrcKey(netrc: string): string | undefined {
   const tokens = netrc.split(/\s+/).filter(Boolean);
   for (let index = 0; index < tokens.length; index++) {
@@ -74,7 +73,6 @@ export function summarizeLoss(key: string, rows: Record<string, unknown>[]): Los
 
 type Fetch = (url: string, init: { method: string; headers: Record<string, string>; body: string; signal?: AbortSignal }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
 
-/** Read summary metrics and a sampled loss curve for `entity/project/run`; every failure is a value, never a throw. */
 export async function wandbReport(runPath: string, options: { key?: string; fetch?: Fetch; signal?: AbortSignal } = {}): Promise<WandbReport> {
   const key = options.key ?? (await readWandbKey());
   if (!key) return { status: "not-configured", notice: NOT_CONFIGURED };

@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { assembleEvidence, findEvidenceLine, writeEvidence } from "./evidence.ts";
+import { assembleEvidence, findEvidenceLine, writeEvidenceOnce } from "./evidence.ts";
 import { isFinished, transition, type Run, type RunStatus, type Template } from "./model.ts";
 import { isStoppedState, type ModalApp, type ModalCli } from "./modal.ts";
 import { jsonFile } from "./store.ts";
@@ -21,7 +21,6 @@ export interface RunDeskDeps {
   onChange?: () => void;
 }
 
-/** A queued run that never reached Modal is given up after this long. */
 const QUEUED_GRACE_MS = 5 * 60_000;
 const LOG_LIMIT = 64 * 1024;
 const WANDB_URL = /https:\/\/wandb\.ai\/([^/\s]+)\/([^/\s]+)\/runs\/([A-Za-z0-9_-]+)/g;
@@ -66,8 +65,7 @@ export function createRunDesk(deps: RunDeskDeps) {
     return run;
   };
 
-  /** Apply a change only if the run is still in the status the caller saw; otherwise another actor already moved it. */
-  async function patch(id: string, expected: RunStatus, change: (run: Run) => Run): Promise<Run | undefined> {
+  async function patchIfStatus(id: string, expected: RunStatus, change: (run: Run) => Run): Promise<Run | undefined> {
     let changed: Run | undefined;
     await store.update(state => ({
       ...state,
@@ -108,9 +106,9 @@ export function createRunDesk(deps: RunDeskDeps) {
         env: { LH_RUN_ID: id, LH_GPU: template.gpu, LH_MAX_RUNTIME_SECONDS: String(confirmed.maxRuntimeMinutes * 60) },
         onExit: () => { poll().catch(error => console.error("[run-desk] poll after modal run exited:", error)); },
       });
-      return (await patch(id, "queued", current => transition(current, "running", { appId, startedAt: now().toISOString() }))) ?? get(id);
+      return (await patchIfStatus(id, "queued", current => transition(current, "running", { appId, startedAt: now().toISOString() }))) ?? get(id);
     } catch (error) {
-      return (await patch(id, "queued", current => transition(current, "failed", { finishedAt: now().toISOString(), error: (error as Error).message }))) ?? get(id);
+      return (await patchIfStatus(id, "queued", current => transition(current, "failed", { finishedAt: now().toISOString(), error: (error as Error).message }))) ?? get(id);
     } finally {
       launching.delete(id);
     }
@@ -123,16 +121,15 @@ export function createRunDesk(deps: RunDeskDeps) {
   }
 
   async function finish(run: Run, cli: ModalCli): Promise<void> {
-    // finishedAt is saved first so a crash mid-finish reproduces the same evidence file name on the next poll.
-    const marked = run.finishedAt ? run : await patch(run.id, "running", current => ({ ...current, finishedAt: now().toISOString() }));
+    const marked = run.finishedAt ? run : await patchIfStatus(run.id, "running", current => ({ ...current, finishedAt: now().toISOString() }));
     if (!marked?.finishedAt) return;
     const logs = await readLogs(marked, cli);
     await writeFile(modalLog(marked.id), tail(logs));
     const assembled = assembleEvidence(marked, findEvidenceLine(logs), marked.finishedAt);
     const evidence = assembled.kind === "invalid" ? undefined : assembled.evidence;
-    const evidenceFile = evidence && await writeEvidence(deps.dataDirectory, evidence);
+    const evidenceFile = evidence && await writeEvidenceOnce(deps.dataDirectory, evidence);
     const wandbRunPath = wandbRunPathIn(logs, marked.template);
-    await patch(marked.id, "running", current => transition(current, assembled.kind === "valid" ? "succeeded" : "failed", {
+    await patchIfStatus(marked.id, "running", current => transition(current, assembled.kind === "valid" ? "succeeded" : "failed", {
       ...(evidence && evidenceFile ? { evidenceFile, outcome: evidence.outcome as "pass" | "fail" } : {}),
       ...(wandbRunPath ? { wandbRunPath } : {}),
       ...(assembled.kind === "valid" ? {} : { error: assembled.errors.join(" ") }),
@@ -143,9 +140,9 @@ export function createRunDesk(deps: RunDeskDeps) {
     if (run.status === "queued") {
       if (launching.has(run.id)) return;
       const app = apps.find(candidate => candidate.description === run.appName);
-      if (app) await patch(run.id, "queued", current => transition(current, "running", { appId: app.appId, startedAt: current.queuedAt }));
+      if (app) await patchIfStatus(run.id, "queued", current => transition(current, "running", { appId: app.appId, startedAt: current.queuedAt }));
       else if (now().getTime() - Date.parse(run.queuedAt) > QUEUED_GRACE_MS) {
-        await patch(run.id, "queued", current => transition(current, "failed", { finishedAt: now().toISOString(), error: "The launch never reached Modal." }));
+        await patchIfStatus(run.id, "queued", current => transition(current, "failed", { finishedAt: now().toISOString(), error: "The launch never reached Modal." }));
       }
       return;
     }
@@ -154,7 +151,7 @@ export function createRunDesk(deps: RunDeskDeps) {
       const elapsed = now().getTime() - Date.parse(run.startedAt ?? run.queuedAt);
       if (elapsed > run.maxRuntimeMinutes * 60_000) {
         await cli.stop(run.appId!);
-        await patch(run.id, "running", current => transition(current, "stopped", {
+        await patchIfStatus(run.id, "running", current => transition(current, "stopped", {
           finishedAt: now().toISOString(), error: `Stopped at the max runtime cap of ${run.maxRuntimeMinutes} min.`,
         }));
       }
@@ -165,7 +162,6 @@ export function createRunDesk(deps: RunDeskDeps) {
 
   let polling: Promise<void> | undefined;
   let again = false;
-  /** Re-check every unfinished run against Modal. Safe to call any number of times, including after a restart. */
   function poll(): Promise<void> {
     if (polling) {
       again = true;
@@ -190,7 +186,7 @@ export function createRunDesk(deps: RunDeskDeps) {
     const run = await get(id);
     if (isFinished(run.status)) return run;
     if (run.appId) await (await deps.cli()).cli.stop(run.appId);
-    return (await patch(id, run.status, current => transition(current, "stopped", { finishedAt: now().toISOString(), error: "Stopped by you." }))) ?? get(id);
+    return (await patchIfStatus(id, run.status, current => transition(current, "stopped", { finishedAt: now().toISOString(), error: "Stopped by you." }))) ?? get(id);
   }
 
   async function logs(id: string): Promise<string> {
