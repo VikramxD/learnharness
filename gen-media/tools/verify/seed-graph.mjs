@@ -2,14 +2,13 @@
 // On-disk format of LearnHarness 0.7.0: src/store/chats.ts, src/store/graph.ts, src/core/contracts/graph.ts.
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
+import { assertIsolated } from "./isolation.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_FIXTURE = path.join(HERE, "fixtures/graph.json");
-const REAL_PROFILE = path.join(os.homedir(), "Library/Application Support/LearnHarness");
 const CHAT_VERSION = 2;
 const GRAPH_FORMAT_VERSION = 1;
 
@@ -33,7 +32,7 @@ function chatMessage({ role, text }, index, base) {
 const appendJsonl = (file, records) => fs.appendFileSync(file, records.map((r) => JSON.stringify(r)).join("\n") + "\n");
 
 export function seedGraph(dataDir, fixture = JSON.parse(fs.readFileSync(DEFAULT_FIXTURE, "utf8"))) {
-	if (path.resolve(dataDir).startsWith(REAL_PROFILE)) throw new Error(`refusing to seed the real profile at ${dataDir}`);
+	assertIsolated(dataDir);
 	const base = Date.now() - fixture.chat.messages.length * 1000;
 	const now = new Date().toISOString();
 	const messages = fixture.chat.messages.map((m, i) => chatMessage(m, i, base));
