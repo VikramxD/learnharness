@@ -1,0 +1,10 @@
+{
+ "data": {
+  "project": {
+   "run": {
+    "state": "finished",
+    "summaryMetrics": "{\"_step\": 1999, \"_runtime\": 1834.2, \"_timestamp\": 1795701234.5, \"loss\": 0.412, \"lr\": 2e-05, \"eval/fid\": 18.7, \"throughput/img_per_s\": 41.3, \"_wandb\": {\"runtime\": 1834}, \"samples\": {\"_type\": \"table-file\"}}"
+   }
+  }
+ }
+}
