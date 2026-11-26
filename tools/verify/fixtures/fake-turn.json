@@ -1,0 +1,6 @@
+{
+	"model": "fake-model",
+	"turns": [
+		{ "content": "Scripted reply from the fake model. What do you already know about flow matching?" }
+	]
+}
