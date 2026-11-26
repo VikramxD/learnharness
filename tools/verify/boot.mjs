@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-// Boot an isolated LearnHarness (bundled server, Node mode, 127.0.0.1) with the given plugins.
-// Usage: node boot.mjs --plugins <dir1,dir2> [--port N] [--script <fake-model.json>] [--vault <dir>] [--timeout ms]
-// Prints `ready <url> plugins=<id>:<status>,... state=<file>` and leaves the server running.
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
@@ -19,7 +16,6 @@ const BINARY = path.join(APP, "Contents/MacOS/LearnHarness");
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT_PREFIX = "lh-verify-";
 
-/** Accepts a plugin root holding dist/manifest.json, or the dist dir itself. */
 export function resolvePluginDist(dir) {
 	for (const candidate of [path.join(dir, "dist"), dir]) {
 		const manifest = path.join(candidate, "manifest.json");
@@ -28,7 +24,6 @@ export function resolvePluginDist(dir) {
 	throw new Error(`No manifest.json in ${dir} or ${dir}/dist`);
 }
 
-/** Resolves a free loopback port: the requested one if it is free, else any. Rejects if a requested port is taken. */
 export function freePort(requested = 0) {
 	return new Promise((resolve, reject) => {
 		const probe = net.createServer().once("error", () => reject(new Error(`port ${requested} is already in use on 127.0.0.1`)));
@@ -39,7 +34,6 @@ export function freePort(requested = 0) {
 	});
 }
 
-/** Builds the isolated data dir. No path under the user's real profile is written. */
 export function seedDataDir(root, plugins) {
 	const data = path.join(root, "data");
 	fs.mkdirSync(path.join(root, "home"), { recursive: true });
@@ -57,7 +51,6 @@ function spawnDetached(command, args, { env, cwd, log }) {
 	return child.pid;
 }
 
-/** A minimal env: no inherited provider keys, HOME redirected into the temp root. */
 function serverEnv(root, data, port) {
 	return {
 		PATH: process.env.PATH,
@@ -100,7 +93,6 @@ async function waitForPlugins(url, ids, timeoutMs, logFile) {
 	throw new Error(`timed out after ${timeoutMs}ms waiting for plugins (${last}); see ${logFile}`);
 }
 
-/** Connects the fake model as the keyless custom provider and selects it for every model slot. */
 async function wireFakeModel(url, baseUrl, model) {
 	const headers = { "content-type": "application/json", origin: url };
 	const current = await fetch(`${url}/api/custom-provider`);

@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-// Stop an isolated LearnHarness started by boot.mjs and delete its temp root.
-// Usage: node teardown.mjs <state.json>
-// Signals only the recorded pids, and only while each one's stdout still points
-// into this root, so a recycled pid is never touched.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -10,8 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROOT_PREFIX } from "./boot.mjs";
 
-/** Every process boot.mjs starts writes stdout into its root, so fd 1 identifies it. */
-function ours(pid, realRoot) {
+function stdoutInRoot(pid, realRoot) {
 	try {
 		const out = execFileSync("lsof", ["-a", "-p", String(pid), "-d", "1", "-Fn"], { encoding: "utf8" });
 		return out.split("\n").some((line) => line.startsWith(`n${realRoot}/`));
@@ -40,7 +35,7 @@ const groupAlive = (pid) => {
 // Ownership is checked once, on the leader. A process group id cannot be reused
 // while any member lives, so leftover members after the leader exits are ours.
 async function stop(pid, realRoot, graceMs) {
-	if (!ours(pid, realRoot)) return "absent";
+	if (!stdoutInRoot(pid, realRoot)) return "absent";
 	signalGroup(pid, "SIGTERM");
 	const deadline = Date.now() + graceMs;
 	while (Date.now() < deadline && groupAlive(pid)) await new Promise((r) => setTimeout(r, 100));
@@ -49,7 +44,6 @@ async function stop(pid, realRoot, graceMs) {
 	return "killed";
 }
 
-/** A root is removable only if it is a direct child of the temp dir with boot's prefix. */
 export function isRemovableRoot(root) {
 	const resolved = path.resolve(root);
 	return path.dirname(resolved) === path.resolve(os.tmpdir()) && path.basename(resolved).startsWith(ROOT_PREFIX);

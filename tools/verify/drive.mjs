@@ -1,7 +1,3 @@
-// Playwright helpers for driving an isolated LearnHarness booted by boot.mjs.
-// Targets are Playwright selector strings ("text=Open hello view",
-// "role=button[name='Say hello']", or CSS) or Locators.
-// Never wait for network idle: the app holds an SSE stream open forever.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -9,7 +5,6 @@ import { chromium } from "playwright-core";
 
 const CACHE = path.join(os.homedir(), "Library/Caches/ms-playwright");
 
-/** The newest cached chromium_headless_shell; override with LH_VERIFY_CHROMIUM. */
 export function chromiumExecutable() {
 	if (process.env.LH_VERIFY_CHROMIUM) return process.env.LH_VERIFY_CHROMIUM;
 	const builds = fs.existsSync(CACHE) ? fs.readdirSync(CACHE).filter((d) => d.startsWith("chromium_headless_shell-")) : [];
@@ -25,7 +20,6 @@ export function readState(statePath) {
 	return JSON.parse(fs.readFileSync(statePath, "utf8"));
 }
 
-/** Launches the browser and loads `url`. `errors` collects page errors and console errors. */
 export async function open(url, { viewport = { width: 1400, height: 900 }, timeout = 20_000 } = {}) {
 	const browser = await chromium.launch({ executablePath: chromiumExecutable() });
 	const page = await browser.newPage({ viewport });
@@ -33,6 +27,7 @@ export async function open(url, { viewport = { width: 1400, height: 900 }, timeo
 	const errors = [];
 	page.on("pageerror", (e) => errors.push(String(e)));
 	page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+	// Not "networkidle": the app holds an SSE stream open forever.
 	await page.goto(url, { waitUntil: "domcontentloaded" });
 	return { browser, page, errors, url, close: () => browser.close() };
 }
@@ -65,7 +60,6 @@ export async function screenshot(page, file, options) {
 	return file;
 }
 
-/** POST /api/plugins/<id>/call. Returns `result`; throws with the server's error otherwise. */
 export async function callPlugin(url, id, operation, input = {}) {
 	const res = await fetch(`${url}/api/plugins/${encodeURIComponent(id)}/call`, {
 		method: "POST",

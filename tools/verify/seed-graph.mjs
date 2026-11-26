@@ -1,10 +1,5 @@
 #!/usr/bin/env node
-// Write a chat record plus graph ledgers whose provenance points into it, in the
-// on-disk format LearnHarness 0.7.0 reads (src/store/chats.ts, src/store/graph.ts,
-// src/core/contracts/graph.ts). The server reads the ledgers on every request,
-// so seeding a running instance needs no restart.
-// Usage: node seed-graph.mjs <state.json> [--fixture <graph.json>]
-//        node seed-graph.mjs --data <isolated data dir> [--fixture <graph.json>]
+// On-disk format of LearnHarness 0.7.0: src/store/chats.ts, src/store/graph.ts, src/core/contracts/graph.ts.
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
@@ -37,7 +32,6 @@ function chatMessage({ role, text }, index, base) {
 
 const appendJsonl = (file, records) => fs.appendFileSync(file, records.map((r) => JSON.stringify(r)).join("\n") + "\n");
 
-/** Returns the ids it minted so a caller can assert on them in the UI or via ctx.learning. */
 export function seedGraph(dataDir, fixture = JSON.parse(fs.readFileSync(DEFAULT_FIXTURE, "utf8"))) {
 	if (path.resolve(dataDir).startsWith(REAL_PROFILE)) throw new Error(`refusing to seed the real profile at ${dataDir}`);
 	const base = Date.now() - fixture.chat.messages.length * 1000;

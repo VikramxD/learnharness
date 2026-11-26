@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// End-to-end proof of the harness: plugin view, backend call, seeded graph, scripted model turn.
 // Usage: node tools/verify/examples/smoke.mjs --out <screenshot dir> [--plugins <extra plugin dirs, comma-separated>]
 import assert from "node:assert/strict";
 import path from "node:path";

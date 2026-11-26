@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-// OpenAI-compatible loopback chat server that replays a scripted list of
-// assistant turns. Usage: node fake-model.mjs --script <file.json> [--port N] [--log <file.jsonl>]
-//
-// Script shape:
-//   { "model": "fake-model", "turns": [ { "match"?: "<regex>", "content"?: "...",
-//       "toolCalls"?: [ { "name": "...", "arguments": { ... } } ] } ] }
-// Each POST /v1/chat/completions serves the first unserved turn whose `match`
-// (if any) tests true against the request's JSON-encoded messages.
 import http from "node:http";
 import fs from "node:fs";
 import { parseArgs } from "node:util";

@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-// Read-only health check for an instance started by boot.mjs.
-// Usage: node doctor.mjs <state.json>   (exit 0 only when every check passes)
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
