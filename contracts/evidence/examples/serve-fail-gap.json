@@ -1,0 +1,16 @@
+{
+  "schema": "lh-evidence/1",
+  "entry": "framework.sglang.radix-cache",
+  "stage": "serve",
+  "outcome": "fail",
+  "producedAt": "2027-02-03T09:12:00Z",
+  "source": { "repo": "/Users/vikramxd/Documents/Projects/mini-sglang", "commit": "c09b7d2" },
+  "command": "uv run python bench/serve.py --requests 500 --shared-prefix 0.8",
+  "endpoint": "http://127.0.0.1:30000/v1/chat/completions",
+  "hardware": "1x NVIDIA L4",
+  "p50Ms": 412,
+  "p95Ms": 1880,
+  "throughput": { "value": 9.4, "unit": "requests/s" },
+  "costPer1k": { "usd": 0.21 },
+  "gap": { "concept": "radix cache eviction", "why": "Evicted shared prefixes in LRU order without reference counts, so active requests lost their cached prefix." }
+}
