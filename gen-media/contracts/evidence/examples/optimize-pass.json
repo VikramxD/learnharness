@@ -1,0 +1,16 @@
+{
+  "schema": "lh-evidence/1",
+  "entry": "framework.sglang.rmsnorm-kernel",
+  "stage": "optimize",
+  "outcome": "pass",
+  "producedAt": "2027-01-20T16:03:44Z",
+  "source": { "repo": "/Users/vikramxd/Documents/Projects/mojo-kernels", "commit": "a81d0e4" },
+  "command": "uv run python bench/rmsnorm.py --shape 4096x8192 --dtype bf16",
+  "metric": "kernel time",
+  "unit": "us",
+  "better": "lower",
+  "baseline": 41.8,
+  "result": 33.5,
+  "hardware": "1x NVIDIA L4",
+  "why": "One pass over the row with a fused reduction instead of two reads of global memory."
+}

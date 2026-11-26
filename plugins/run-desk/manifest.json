@@ -1,0 +1,11 @@
+{
+  "apiVersion": 1,
+  "id": "run-desk",
+  "name": "Run Desk",
+  "version": "0.1.0",
+  "minAppVersion": "0.7.0",
+  "description": "Launches GPU runs on Modal after an explicit cost confirmation, reads W&B results, and writes Evidence files for the Stage ledger. Runs the Modal CLI with your user permissions.",
+  "main": "main.js",
+  "backend": "backend.cjs",
+  "styles": "styles.css"
+}

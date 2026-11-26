@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/R3AvTIr4r4/uv+3k8uDlZGTF6bE</id>
+  <title>arXiv Query: search_query=&amp;id_list=2407.01392,2006.11239,9999.99999&amp;start=0&amp;max_results=3</title>
+  <updated>2026-11-26T12:50:26Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=&amp;start=0&amp;max_results=3&amp;id_list=2407.01392,2006.11239,9999.99999" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>3</opensearch:itemsPerPage>
+  <opensearch:totalResults>2</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2006.11239v2</id>
+    <title>Denoising Diffusion Probabilistic Models</title>
+    <updated>2020-12-16T21:15:05Z</updated>
+    <link href="https://arxiv.org/abs/2006.11239v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2006.11239v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We present high quality image synthesis results using diffusion probabilistic models, a class of latent variable models inspired by considerations from nonequilibrium thermodynamics. Our best results are obtained by training on a weighted variational bound designed according to a novel connection between diffusion probabilistic models and denoising score matching with Langevin dynamics, and our models naturally admit a progressive lossy decompression scheme that can be interpreted as a generalization of autoregressive decoding. On the unconditional CIFAR10 dataset, we obtain an Inception score of 9.46 and a state-of-the-art FID score of 3.17. On 256x256 LSUN, we obtain sample quality similar to ProgressiveGAN. Our implementation is available at https://github.com/hojonathanho/diffusion</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-06-19T17:24:44Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Jonathan Ho</name>
+    </author>
+    <author>
+      <name>Ajay Jain</name>
+    </author>
+    <author>
+      <name>Pieter Abbeel</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2407.01392v4</id>
+    <title>Diffusion Forcing: Next-token Prediction Meets Full-Sequence Diffusion</title>
+    <updated>2024-12-10T01:32:23Z</updated>
+    <link href="https://arxiv.org/abs/2407.01392v4" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2407.01392v4" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper presents Diffusion Forcing, a new training paradigm where a diffusion model is trained to denoise a set of tokens with independent per-token noise levels. We apply Diffusion Forcing to sequence generative modeling by training a causal next-token prediction model to generate one or several future tokens without fully diffusing past ones. Our approach is shown to combine the strengths of next-token prediction models, such as variable-length generation, with the strengths of full-sequence diffusion models, such as the ability to guide sampling to desirable trajectories. Our method offers a range of additional capabilities, such as (1) rolling-out sequences of continuous tokens, such as video, with lengths past the training horizon, where baselines diverge and (2) new sampling and guiding schemes that uniquely profit from Diffusion Forcing's variable-horizon and causal architecture, and which lead to marked performance gains in decision-making and planning tasks. In addition to its empirical success, our method is proven to optimize a variational lower bound on the likelihoods of all subsequences of tokens drawn from the true joint distribution. Project website: https://boyuan.space/diffusion-forcing</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-07-01T15:43:25Z</published>
+    <arxiv:comment>Project website: https://boyuan.space/diffusion-forcing</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Boyuan Chen</name>
+    </author>
+    <author>
+      <name>Diego Marti Monso</name>
+    </author>
+    <author>
+      <name>Yilun Du</name>
+    </author>
+    <author>
+      <name>Max Simchowitz</name>
+    </author>
+    <author>
+      <name>Russ Tedrake</name>
+    </author>
+    <author>
+      <name>Vincent Sitzmann</name>
+    </author>
+  </entry>
+</feed>

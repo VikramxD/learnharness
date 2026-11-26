@@ -1,0 +1,11 @@
+{
+  "apiVersion": 1,
+  "id": "focus",
+  "name": "Focus",
+  "version": "0.1.0",
+  "minAppVersion": "0.7.0",
+  "description": "Focus music while you learn: SomaFM radio streams, or your Apple Music playlists controlled through the Music app. Playback continues as you move between sessions.",
+  "main": "main.js",
+  "backend": "backend.cjs",
+  "styles": "styles.css"
+}

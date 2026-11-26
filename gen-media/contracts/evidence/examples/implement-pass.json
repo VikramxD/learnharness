@@ -1,0 +1,11 @@
+{
+  "schema": "lh-evidence/1",
+  "entry": "paper.2006.11239",
+  "stage": "implement",
+  "outcome": "pass",
+  "producedAt": "2026-12-14T10:22:05Z",
+  "source": { "repo": "/Users/vikramxd/Documents/Projects/ddpm-from-scratch", "commit": "3f2a9c1" },
+  "command": "uv run pytest tests/test_against_diffusers.py",
+  "reference": "diffusers DDPMScheduler 0.36 noise schedule and loss",
+  "tests": { "passed": 14, "total": 14 }
+}

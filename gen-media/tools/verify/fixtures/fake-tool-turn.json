@@ -1,0 +1,7 @@
+{
+	"model": "fake-model",
+	"turns": [
+		{ "toolCalls": [{ "name": "list_sessions", "arguments": {} }] },
+		{ "match": "toolCall|tool_call_id", "content": "Scripted reply after a tool call. What do you already know about flow matching?" }
+	]
+}

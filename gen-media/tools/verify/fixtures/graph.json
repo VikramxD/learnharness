@@ -1,0 +1,23 @@
+{
+	"chat": {
+		"title": "Flow matching for video generation",
+		"messages": [
+			{ "role": "user", "text": "Why does flow matching train faster than DDPM-style diffusion?" },
+			{ "role": "assistant", "text": "Flow matching regresses a velocity field along straight probability paths, so the target is simulation-free and has lower variance than score matching on curved paths." },
+			{ "role": "user", "text": "And why does that matter for video models?" },
+			{ "role": "assistant", "text": "Straighter paths need fewer sampling steps, and fewer steps cut the cost of every frame a video model generates." }
+		]
+	},
+	"propositions": [
+		{ "key": "fm", "name": "Flow matching", "statement": "Flow matching trains a network to regress the velocity field of a probability path from noise to data.", "messages": [1] },
+		{ "key": "straight", "name": "Straight paths", "statement": "Rectified flow paths between noise and data are close to straight lines.", "messages": [1] },
+		{ "key": "variance", "name": "Low-variance target", "statement": "A simulation-free regression target on straight paths has lower variance than score matching on curved paths.", "messages": [1] },
+		{ "key": "fewsteps", "name": "Few sampling steps", "statement": "Straighter probability paths need fewer ODE solver steps at sampling time.", "messages": [3] },
+		{ "key": "videocost", "name": "Cheaper video sampling", "statement": "Fewer sampling steps reduce the per-frame inference cost of a video generation model.", "messages": [3] }
+	],
+	"chains": [
+		{ "premises": ["fm", "straight"], "conclusion": "variance", "messages": [1] },
+		{ "premises": ["straight"], "conclusion": "fewsteps", "messages": [3] },
+		{ "premises": ["fewsteps"], "conclusion": "videocost", "messages": [3] }
+	]
+}
