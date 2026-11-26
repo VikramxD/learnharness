@@ -2,11 +2,13 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { PluginLearningData } from "learnharness-plugin-api";
 import { ArxivClient, baseArxivId, type ArxivPaper } from "./arxiv.ts";
-import { createEntries, parseEntryId, type Entry, type EntryId } from "./domain.ts";
+import { createEntries, lineagePrerequisites, linkSession, markUnderstood, parseEntryId, stagesOf, unlinkSession, type Entry, type EntryId, type LedgerState } from "./domain.ts";
 import { scanEvidence, type ScanReport } from "./evidence.ts";
+import { teachingGoal } from "./goal.ts";
 import { optionalText, requiredEntryId, requiredText } from "./input.ts";
 import { frameworkName, MaterialDesk, paperEntry, type OwnWorkNote } from "./material.ts";
 import { ledgerSnapshot, type LedgerSnapshot } from "./projection.ts";
+import { mentionNeedles, SessionReader } from "./sessions.ts";
 import { seedEntries, type Roadmap } from "./seed.ts";
 import { parseSettingsInput, readSettings, writeSettings, type HarnessSettings } from "./settings.ts";
 import { LedgerStore } from "./store.ts";
@@ -36,6 +38,16 @@ export function createHarness(deps: HarnessDeps) {
     const { appended } = await store.transact(state => createEntries(state, entries));
     if (appended.length) deps.notify(LEDGER_TOPIC);
     return appended.length;
+  };
+  const sessions = new SessionReader(deps.learning);
+  const entryOf = (state: LedgerState, id: EntryId) => {
+    const entry = state.entries[id];
+    if (!entry) throw new Error(`Unknown entry ${id}.`);
+    return entry;
+  };
+  const sessionView = async (state: LedgerState, id: EntryId) => {
+    const entry = entryOf(state, id);
+    return sessions.view(state.links[id] ?? [], mentionNeedles(entry, await desk.localPaths(entry)));
   };
   const annotate = async (papers: ArxivPaper[]) => {
     const state = await store.read();
@@ -115,6 +127,40 @@ export function createHarness(deps: HarnessDeps) {
       await create([{ id: note.entryId, kind: "own", title: path.basename(note.path, ".md"), source: { kind: "own", vaultNotePath: path.join(vaultPath, note.path) } }]);
       return { entryId: note.entryId };
     },
+    listSessions: () => sessions.list(),
+    async entrySessions(input: unknown) {
+      const state = await store.read();
+      const view = await sessionView(state, requiredEntryId(input));
+      return { ...view, canMarkUnderstood: view.chainIds.length > 0 };
+    },
+    async linkSession(input: unknown) {
+      const entryId = requiredEntryId(input), chatId = requiredText(input, "chatId");
+      const { appended } = await store.transact(state => linkSession(state, entryId, chatId));
+      if (appended.length) deps.notify(LEDGER_TOPIC);
+      return { linked: appended.length > 0 };
+    },
+    async unlinkSession(input: unknown) {
+      const entryId = requiredEntryId(input), chatId = requiredText(input, "chatId");
+      const { appended } = await store.transact(state => unlinkSession(state, entryId, chatId));
+      if (appended.length) deps.notify(LEDGER_TOPIC);
+      return { unlinked: appended.length > 0 };
+    },
+    async markUnderstood(input: unknown) {
+      const entryId = requiredEntryId(input);
+      const view = await sessionView(await store.read(), entryId);
+      await store.transact(state => markUnderstood(state, entryId, state.links[entryId] ?? [], view.chainIds));
+      deps.notify(LEDGER_TOPIC);
+      return { chainIds: view.chainIds };
+    },
+    async teachingGoal(input: unknown) {
+      const state = await store.read();
+      const entry = entryOf(state, requiredEntryId(input));
+      const prerequisites = (entry.parentId ? [entryOf(state, entry.parentId), ...lineagePrerequisites(state, entry.parentId)] : lineagePrerequisites(state, entry.id))
+        .filter(other => stagesOf(state, other.id).understand.state === "done");
+      return {
+        text: teachingGoal({ entry, paths: await desk.localPaths(entry), understoodPrerequisites: prerequisites, question: questions.get(entry.id), understand: stagesOf(state, entry.id).understand }),
+      };
+    },
     getSettings: settings,
     async saveSettings(input: unknown): Promise<HarnessSettings> {
       const next = parseSettingsInput(input, await settings());
@@ -123,7 +169,7 @@ export function createHarness(deps: HarnessDeps) {
     },
   } satisfies Record<string, (input: unknown) => unknown>;
 
-  return { store, operations, rescan, questions, desk };
+  return { store, operations, rescan, desk, sessions };
 }
 
 export type Harness = ReturnType<typeof createHarness>;
