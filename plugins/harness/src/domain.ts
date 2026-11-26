@@ -62,21 +62,18 @@ export interface Rejection { file: string; sha256: string; errors: string[]; at:
 interface Understanding { chatIds: string[]; chainIds: string[]; at: string; seq: number }
 
 export interface LedgerState {
-  /** Entry ids in creation order; lineage order is creation order. */
-  order: EntryId[];
+  creationOrder: EntryId[];
   entries: Record<EntryId, Entry>;
   links: Record<EntryId, string[]>;
   understood: Record<EntryId, Understanding>;
   evidence: Record<EntryId, EvidenceRecord[]>;
-  /** Latest rejection per file path; a later acceptance of the same path clears it. */
   rejected: Record<string, Rejection>;
-  /** file + NUL + sha256 of every evidence file already ingested. */
   ingested: Record<string, true>;
   handoffs: Record<EntryId, string[]>;
   seq: number;
 }
 
-export const emptyLedger = (): LedgerState => ({ order: [], entries: {}, links: {}, understood: {}, evidence: {}, rejected: {}, ingested: {}, handoffs: {}, seq: 0 });
+export const emptyLedger = (): LedgerState => ({ creationOrder: [], entries: {}, links: {}, understood: {}, evidence: {}, rejected: {}, ingested: {}, handoffs: {}, seq: 0 });
 
 export const ingestKey = (file: string, sha256: string) => `${file}\u0000${sha256}`;
 
@@ -86,7 +83,7 @@ export function reduce(state: LedgerState, event: LedgerEvent): LedgerState {
   switch (event.type) {
     case "EntryCreated": {
       if (state.entries[event.entry.id]) return next;
-      return { ...next, order: [...state.order, event.entry.id], entries: { ...state.entries, [event.entry.id]: event.entry } };
+      return { ...next, creationOrder: [...state.creationOrder, event.entry.id], entries: { ...state.entries, [event.entry.id]: event.entry } };
     }
     case "SessionLinked": {
       const current = state.links[event.entryId] ?? [];
@@ -183,21 +180,16 @@ export function stagesOf(state: LedgerState, id: EntryId): EntryStages {
   return { understand, ...build };
 }
 
-/** Entries earlier in the same lineage, in lineage order. */
 export function lineagePrerequisites(state: LedgerState, id: EntryId): Entry[] {
   const entry = state.entries[id];
   if (!entry?.lineage) return [];
-  const position = state.order.indexOf(id);
-  return state.order.slice(0, position).map(other => state.entries[other]!).filter(other => other.lineage === entry.lineage);
+  const position = state.creationOrder.indexOf(id);
+  return state.creationOrder.slice(0, position).map(other => state.entries[other]!).filter(other => other.lineage === entry.lineage);
 }
 
-/** Evidence for ids that are not (yet) entries in the ledger. */
 export function orphanEvidence(state: LedgerState): EntryId[] {
   return (Object.keys(state.evidence) as EntryId[]).filter(id => !state.entries[id]);
 }
-
-// Commands: pure decisions from the current state to the events that move it. Each returns no
-// events when the goal already holds, so retries and re-scans converge.
 
 export function createEntries(state: LedgerState, entries: readonly Entry[]): DraftEvent[] {
   const seen = new Set<string>();
@@ -221,7 +213,6 @@ export function markUnderstood(state: LedgerState, entryId: EntryId, chatIds: st
 
 export type ValidationResult = { ok: true; evidence: Evidence } | { ok: false; errors: string[] };
 
-/** `location` is the entry id and stage named by the file's folders, when it sits in the documented layout. */
 export function ingestEvidence(state: LedgerState, file: string, sha256: string, result: ValidationResult, location?: { entry: string; stage: string }): DraftEvent[] {
   if (state.ingested[ingestKey(file, sha256)]) return [];
   const errors = result.ok ? [] : [...result.errors];

@@ -3,7 +3,6 @@ import type { Entry, UnderstandStatus } from "./domain.ts";
 export interface GoalInput {
   entry: Entry;
   paths: { pdfPath?: string; checkoutPath?: string; vaultNotePath?: string };
-  /** Earlier entries of the lineage that are already understood. */
   understoodPrerequisites: Entry[];
   question?: string;
   understand: UnderstandStatus;
@@ -24,7 +23,6 @@ function materialLines({ entry, paths }: GoalInput): string[] {
   return [`The material is my own note at ${source.vaultNotePath}.`];
 }
 
-/** The goal the learner pastes into a new Teach session. */
 export function teachingGoal(input: GoalInput): string {
   const { entry, understoodPrerequisites, question, understand } = input;
   const lines: string[] = [];

@@ -16,7 +16,6 @@ after(() => GlobalRegistrator.unregister());
 
 const flush = () => delay(30);
 
-/** A frontend context whose ctx.call reaches a real backend service in a temp directory. */
 async function stubHost(t: Parameters<typeof tempDirectory>[0], chains: { id: string; chatId: string }[] = []) {
   const base = await tempDirectory(t, "harness-frontend-");
   const learning = {

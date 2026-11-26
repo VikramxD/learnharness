@@ -15,7 +15,6 @@ export interface EvidenceFile {
 export interface RootStatus { root: string; directory: string; found: boolean; files: number }
 export interface ScanReport { roots: RootStatus[]; accepted: number; rejected: number }
 
-/** A repo root keeps its files under `<root>/evidence/`; Run Desk's root is the evidence directory itself. */
 export async function evidenceDirectory(root: string): Promise<string> {
   const nested = path.join(root, "evidence");
   return (await fs.stat(nested).then(s => s.isDirectory(), () => false)) ? nested : root;

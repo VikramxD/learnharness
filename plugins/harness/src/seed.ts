@@ -16,7 +16,6 @@ const requireId = (value: string): EntryId => {
   return id;
 };
 
-/** Every seeded entry in roadmap order, with each entry's central question. */
 export function seedEntries(roadmap: Roadmap): { entry: Entry; question: string }[] {
   const papers = roadmap.lineages.flatMap(lineage => lineage.papers.map(paper => ({
     entry: { id: requireId(`paper.${paper.arxivId}`), kind: "paper" as const, title: paper.title, lineage: lineage.name, source: { kind: "paper" as const, arxivId: paper.arxivId } },

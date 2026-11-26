@@ -39,7 +39,6 @@ function absolutePath(value: unknown, label: string): string {
   return path.normalize(expanded);
 }
 
-/** Parse a partial settings change from the frontend into full settings. */
 export function parseSettingsInput(input: unknown, current: HarnessSettings): HarnessSettings {
   if (typeof input !== "object" || input === null) throw new Error("Settings must be an object.");
   const change = input as Record<string, unknown>;

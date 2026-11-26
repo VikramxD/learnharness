@@ -31,7 +31,6 @@ export interface MirrorInput {
   sessionTitles: Record<string, string>;
 }
 
-/** Every mirror note keyed by its path relative to the vault, and each entry's chain notes. */
 export function mirrorNotes(input: MirrorInput): { notes: Map<string, string>; chainNotesOf: (id: EntryId) => string[] } {
   const notes = new Map<string, string>();
   const statements = new Map(input.propositions.map(node => [node.id, node]));
@@ -227,8 +226,6 @@ async function readManifest(file: string): Promise<Manifest> {
 
 const currentHash = async (file: string) => fs.readFile(file).then(sha256, () => undefined);
 
-/** Writes only under `<vault>/LearnHarness/`, records what it wrote, and never touches a file
- * whose content changed since Harness last wrote it, or one Harness did not create. */
 export class VaultWriter {
   private readonly serialize = serialized();
   constructor(private readonly manifestFile: string) {}
@@ -282,7 +279,6 @@ export class VaultWriter {
     });
   }
 
-  /** Write a Handoff note; rewriting one is allowed only while it is unedited. */
   writeOnce(vaultPath: string, relative: string, content: string): Promise<string> {
     return this.serialize(async () => {
       const { manifest, files, resolve } = await this.open(vaultPath);

@@ -93,7 +93,7 @@ export async function mountEntryView(ctx: PluginFrontendContext, entryId: string
 
     const evidence = h("table", { class: "lh-harness-evidence" },
       h("thead", {}, h("tr", {}, h("th", {}, "Stage"), h("th", {}, "Outcome"), h("th", {}, "Produced"), h("th", {}, "Result"), h("th", {}, "File"))),
-      h("tbody", {}, ...row.evidence.map(r => h("tr", {},
+      h("tbody", {}, ...row.evidenceNewestFirst.map(r => h("tr", {},
         h("td", {}, r.evidence.stage), h("td", { "data-outcome": r.evidence.outcome }, r.evidence.outcome), h("td", {}, r.evidence.producedAt),
         h("td", {}, evidenceSummary(r.evidence)), h("td", {}, h("code", {}, r.file))))));
 
@@ -110,7 +110,7 @@ export async function mountEntryView(ctx: PluginFrontendContext, entryId: string
       h("section", {}, h("h3", {}, "Sources"), sourceList, sourceActions),
       h("section", {}, h("h3", {}, "Understand"), h("h4", {}, "Linked sessions"), linked,
         ...(sessions.suggested.length ? [h("h4", {}, "Suggested sessions"), suggested] : []), picker, understandActions),
-      h("section", {}, h("h3", {}, "Evidence history"), row.evidence.length ? evidence : h("p", { class: "lh-harness-muted" }, "No Evidence files yet.")),
+      h("section", {}, h("h3", {}, "Evidence history"), row.evidenceNewestFirst.length ? evidence : h("p", { class: "lh-harness-muted" }, "No Evidence files yet.")),
       h("section", {}, h("h3", {}, "Handoffs"),
         ...(row.handoffs.length ? [h("ul", {}, ...row.handoffs.map(p => h("li", {}, h("code", {}, p))))] : []), handoffActions),
     );

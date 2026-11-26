@@ -16,7 +16,6 @@ export interface OwnWorkNote { path: string; project: string; type: "Decision" |
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
-/** Local files for Material: one canonical place per paper and per pinned framework commit. */
 export class MaterialDesk {
   constructor(
     private readonly dataDirectory: string,
@@ -33,7 +32,6 @@ export class MaterialDesk {
     return path.join(this.dataDirectory, "frameworks", `${frameworkName(repoUrl)}@${commit.slice(0, 7)}`);
   }
 
-  /** Paths that exist on disk for an entry right now. */
   async localPaths(entry: Entry): Promise<{ pdfPath?: string; checkoutPath?: string; vaultNotePath?: string }> {
     const source = entry.source;
     if (source.kind === "paper") {
@@ -72,7 +70,6 @@ export class MaterialDesk {
     }
   }
 
-  /** Semantic Scholar references, retrying a 429 with exponential backoff (or its Retry-After). */
   async references(arxivId: string, signal?: AbortSignal): Promise<Reference[]> {
     const url = `https://api.semanticscholar.org/graph/v1/paper/arXiv:${baseArxivId(arxivId)}/references?fields=title,externalIds,year&limit=100`;
     for (let attempt = 0; ; attempt++) {
@@ -88,7 +85,6 @@ export class MaterialDesk {
     }
   }
 
-  /** A shallow, read-only checkout of exactly one commit. A ref is resolved to its commit first. */
   async checkout(repoUrl: string, commitOrRef: string, signal?: AbortSignal): Promise<{ commit: string; path: string }> {
     const commit = /^[0-9a-f]{40}$/.test(commitOrRef) ? commitOrRef : await resolveRef(repoUrl, commitOrRef, signal);
     const target = this.checkoutPath(repoUrl, commit);
@@ -138,7 +134,6 @@ export function frameworkName(repoUrl: string): string {
   return name;
 }
 
-/** `Project - Decision - Topic.md`, `Project - Experiment - Topic.md` or `Project - Architecture.md`. */
 export function parseOwnWorkName(relativePath: string): OwnWorkNote | undefined {
   const match = /^(.+?) - (Decision|Experiment|Architecture)(?: - (.+))?\.md$/.exec(path.basename(relativePath));
   if (!match) return undefined;

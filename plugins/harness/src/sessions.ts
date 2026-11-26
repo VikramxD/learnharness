@@ -7,7 +7,6 @@ export interface SuggestedSession extends SessionSummary { mentions: string[] }
 
 const summary = (item: ChatListItem): SessionSummary => ({ id: item.id, title: item.title, kind: item.kind, updatedAt: item.updatedAt });
 
-/** What a session would contain if it was about this entry. */
 export function mentionNeedles(entry: Entry, paths: { pdfPath?: string; checkoutPath?: string }): string[] {
   const needles = [entry.id as string];
   if (entry.source.kind === "paper") needles.push(entry.source.arxivId);
@@ -21,7 +20,6 @@ export const chainsFrom = (chains: readonly GraphChain[], chatIds: readonly stri
   return chains.filter(chain => chain.provenance.some(point => wanted.has(point.chatId)));
 };
 
-/** Reads saved sessions, caching each transcript's searchable text until the session changes. */
 export class SessionReader {
   private texts = new Map<string, { updatedAt: string; text: string }>();
 

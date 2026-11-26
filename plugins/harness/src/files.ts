@@ -4,7 +4,6 @@ import path from "node:path";
 
 export const sha256 = (data: string | Uint8Array) => createHash("sha256").update(data).digest("hex");
 
-/** Write through a hidden temporary sibling and rename, so readers never see a partial file. */
 export async function writeFileAtomic(file: string, data: string | Uint8Array): Promise<void> {
   await fs.mkdir(path.dirname(file), { recursive: true });
   const temporary = path.join(path.dirname(file), `.${path.basename(file)}.${randomBytes(4).toString("hex")}.tmp`);
@@ -30,7 +29,6 @@ export async function readDirectories(directory: string): Promise<string[]> {
   }
 }
 
-/** Run async work one call at a time, in call order; a failure does not block later calls. */
 export function serialized() {
   let tail: Promise<unknown> = Promise.resolve();
   return <T>(work: () => Promise<T>): Promise<T> => {

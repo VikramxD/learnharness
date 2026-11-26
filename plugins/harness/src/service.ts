@@ -17,11 +17,9 @@ import { handoffNote, handoffPath, mirrorNotes, VaultWriter, type SyncReport } f
 export const LEDGER_TOPIC = "ledger";
 
 export interface HarnessDeps {
-  /** The plugin's code directory, holding seed/roadmap.json. */
   directory: string;
   dataDirectory: string;
   learning: PluginLearningData;
-  /** Tell open views the ledger changed. */
   notify: (topic: string) => void;
   arxiv?: ArxivClient;
   fetcher?: typeof fetch;
@@ -190,7 +188,6 @@ export function createHarness(deps: HarnessDeps) {
       if (appended.length) deps.notify(LEDGER_TOPIC);
       return { notePath };
     },
-    /** Local paths for a paper (downloading its PDF), a framework checkout or an own-work note. */
     async materialFetch(input: unknown) {
       const id = requiredText(input, "id");
       const state = await store.read();

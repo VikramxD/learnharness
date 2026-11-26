@@ -4,8 +4,6 @@ import path from "node:path";
 import { serialized } from "./files.ts";
 import { emptyLedger, reduce, type DraftEvent, type LedgerEvent, type LedgerState } from "./domain.ts";
 
-/** The append-only ledger log. One instance per backend owns the file; every change runs
- * through `transact`, which decides against the current state and appends under one lock. */
 export class LedgerStore {
   private state: LedgerState | undefined;
   private readonly serialize = serialized();
@@ -24,7 +22,6 @@ export class LedgerStore {
       const at = this.now().toISOString();
       const appended = drafts.map(draft => ({ ...draft, id: randomUUID(), at }) as LedgerEvent);
       await fs.mkdir(path.dirname(this.file), { recursive: true });
-      // One write with O_APPEND; a crash can tear only the final line, which load() repairs.
       await fs.appendFile(this.file, appended.map(event => JSON.stringify(event) + "\n").join(""));
       for (const event of appended) state = reduce(state, event);
       this.state = state;
@@ -40,12 +37,17 @@ export class LedgerStore {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       return (this.state = emptyLedger());
     }
-    const complete = text.lastIndexOf("\n") + 1;
-    if (complete < text.length) await fs.truncate(this.file, Buffer.byteLength(text.slice(0, complete)));
     let state = emptyLedger();
-    for (const line of text.slice(0, complete).split("\n")) {
+    for (const line of (await this.repairTornTail(text)).split("\n")) {
       if (line.trim()) state = reduce(state, JSON.parse(line) as LedgerEvent);
     }
     return (this.state = state);
+  }
+
+  /** A crash mid-append can leave a final line without its newline; drop it so later appends stay line-aligned. */
+  private async repairTornTail(text: string): Promise<string> {
+    const complete = text.slice(0, text.lastIndexOf("\n") + 1);
+    if (complete.length < text.length) await fs.truncate(this.file, Buffer.byteLength(complete));
+    return complete;
   }
 }

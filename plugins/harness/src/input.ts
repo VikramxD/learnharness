@@ -1,6 +1,5 @@
 import { parseEntryId, type EntryId } from "./domain.ts";
 
-/** Parsers for operation input arriving from the frontend bridge or an agent tool. */
 const field = (input: unknown, key: string): unknown => (typeof input === "object" && input !== null ? (input as Record<string, unknown>)[key] : undefined);
 
 export function requiredText(input: unknown, key: string): string {

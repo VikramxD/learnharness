@@ -9,7 +9,6 @@ export interface ArxivPaper {
 
 const ARXIV_ID = /^\d{4}\.\d{4,5}(v\d+)?$/;
 export const isArxivId = (value: string) => ARXIV_ID.test(value.trim());
-/** The id without its version suffix: entries name a paper, not a revision. */
 export const baseArxivId = (value: string) => value.trim().replace(/v\d+$/, "");
 
 const decode = (text: string) => text
@@ -72,7 +71,6 @@ export class ArxivClient {
     return this.query({ id_list: ids.join(","), max_results: String(ids.length) }, signal);
   }
 
-  /** An arXiv id looks the paper up directly; anything else is a relevance search over all fields. */
   search(text: string, signal?: AbortSignal, maxResults = 15) {
     const query = text.trim();
     if (isArxivId(query)) return this.byIds([query], signal);
@@ -80,10 +78,9 @@ export class ArxivClient {
     return this.query({ search_query: terms.join(" AND "), sortBy: "relevance", max_results: String(maxResults) }, signal);
   }
 
-  /** Newest cs.CV and cs.LG submissions matching any keyword. */
-  feed(keywords: readonly string[], signal?: AbortSignal, maxResults = 25) {
+  feed(keywords: readonly string[], signal?: AbortSignal, categories: readonly string[] = ["cs.CV", "cs.LG"], maxResults = 25) {
     const words = keywords.map(k => `abs:"${k.replace(/"/g, "")}"`).join(" OR ");
-    const search = `(cat:cs.CV OR cat:cs.LG)${words ? ` AND (${words})` : ""}`;
+    const search = `(${categories.map(c => `cat:${c}`).join(" OR ")})${words ? ` AND (${words})` : ""}`;
     return this.query({ search_query: search, sortBy: "submittedDate", sortOrder: "descending", max_results: String(maxResults) }, signal);
   }
 

@@ -5,8 +5,7 @@ export interface EntryRow {
   stages: EntryStages;
   chatIds: string[];
   handoffs: string[];
-  /** Newest first by producedAt. */
-  evidence: EvidenceRecord[];
+  evidenceNewestFirst: EvidenceRecord[];
 }
 
 export interface LedgerSnapshot {
@@ -21,13 +20,13 @@ export function entryRow(state: LedgerState, id: EntryId): EntryRow {
     stages: stagesOf(state, id),
     chatIds: state.links[id] ?? [],
     handoffs: state.handoffs[id] ?? [],
-    evidence: [...(state.evidence[id] ?? [])].sort((a, b) => Date.parse(b.evidence.producedAt) - Date.parse(a.evidence.producedAt) || b.seq - a.seq),
+    evidenceNewestFirst: [...(state.evidence[id] ?? [])].sort((a, b) => Date.parse(b.evidence.producedAt) - Date.parse(a.evidence.producedAt) || b.seq - a.seq),
   };
 }
 
 export function ledgerSnapshot(state: LedgerState): LedgerSnapshot {
   return {
-    entries: state.order.map(id => entryRow(state, id)),
+    entries: state.creationOrder.map(id => entryRow(state, id)),
     rejected: Object.values(state.rejected).sort((a, b) => b.at.localeCompare(a.at)),
     orphans: orphanEvidence(state).map(entryId => ({ entryId, files: (state.evidence[entryId] ?? []).map(r => r.file) })),
   };

@@ -14,7 +14,7 @@ export function activate(ctx: PluginFrontendContext): () => void {
   const nav: Navigation = {
     openEntry(id) {
       selected = id;
-      try { localStorage.setItem(SELECTED_KEY, id); } catch { /* storage may be unavailable; the selection still works for this window */ }
+      try { localStorage.setItem(SELECTED_KEY, id); } catch {}
       void ctx.app.openView("entry");
     },
   };

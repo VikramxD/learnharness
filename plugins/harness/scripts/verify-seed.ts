@@ -1,5 +1,3 @@
-/** Check every arXiv id in seed/roadmap.json against export.arxiv.org (one request per 3 s)
- * and every framework commit against GitHub. Exits non-zero on any mismatch. */
 import { readFileSync } from "node:fs";
 import { ArxivClient } from "../src/arxiv.ts";
 import type { Roadmap } from "../src/seed.ts";

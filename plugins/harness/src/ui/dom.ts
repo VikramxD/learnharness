@@ -16,7 +16,6 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<s
 
 export const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-/** Host buttons scoped to one view mount. */
 export function buttons(ctx: PluginFrontendContext, signal: AbortSignal) {
   return (container: HTMLElement, props: PluginButtonProps) => ctx.ui.mountButton(container, props, { signal });
 }
@@ -29,7 +28,6 @@ export function statusLine(): { node: HTMLElement; show: (text: string, kind?: "
   };
 }
 
-/** Run a backend-changing action and report its outcome on the view's status line. */
 export async function attempt<T>(status: ReturnType<typeof statusLine>, work: () => Promise<T>, done?: (result: T) => string): Promise<T | undefined> {
   try {
     const result = await work();

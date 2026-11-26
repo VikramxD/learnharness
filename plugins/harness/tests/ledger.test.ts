@@ -124,9 +124,9 @@ test("a torn final line from a crash is dropped and the log keeps working", asyn
   await ledger.transact(s => createEntries(s, [paper("2006.11239")]));
   await appendFile(ledger.file, '{"type":"EntryCreated","entry":{"id":"pa');
   const reopened = new LedgerStore(ledger.file);
-  assert.deepEqual((await reopened.read()).order, [ddpm]);
+  assert.deepEqual((await reopened.read()).creationOrder, [ddpm]);
   await reopened.transact(s => createEntries(s, [paper("2010.02502")]));
-  assert.deepEqual((await new LedgerStore(ledger.file).read()).order, [ddpm, id("paper.2010.02502")]);
+  assert.deepEqual((await new LedgerStore(ledger.file).read()).creationOrder, [ddpm, id("paper.2010.02502")]);
 });
 
 test("concurrent transactions serialize, so a racing duplicate seed appends once", async t => {
