@@ -5,6 +5,7 @@ const RESCAN_INTERVAL_MS = 2 * 60 * 1000;
 
 export function activate(ctx: PluginBackendContext): () => void {
   const harness = createHarness({
+    directory: ctx.directory,
     dataDirectory: ctx.dataDirectory,
     learning: ctx.learning,
     notify: topic => { if (!ctx.signal.aborted) ctx.events.emit(topic, {}); },

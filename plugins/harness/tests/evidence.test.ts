@@ -6,7 +6,7 @@ import type { PluginLearningData } from "learnharness-plugin-api";
 import { evidenceFileName } from "../../../contracts/evidence/validate.mjs";
 import { createEntries, parseEntryId, stagesOf, type Entry } from "../src/domain.ts";
 import { createHarness } from "../src/service.ts";
-import { repoRoot, tempDirectory } from "./helpers.ts";
+import { pluginRoot, repoRoot, tempDirectory } from "./helpers.ts";
 
 const example = async (name: string) => JSON.parse(await readFile(path.join(repoRoot, "contracts/evidence/examples", name), "utf8"));
 
@@ -22,7 +22,7 @@ async function setup(t: Parameters<typeof tempDirectory>[0]) {
   const base = await tempDirectory(t, "harness-evidence-");
   const learning = { directory: path.join(base, "learning") } as PluginLearningData;
   const notified: string[] = [];
-  const harness = createHarness({ dataDirectory: path.join(base, "data"), learning, notify: topic => notified.push(topic) });
+  const harness = createHarness({ directory: pluginRoot, dataDirectory: path.join(base, "data"), learning, notify: topic => notified.push(topic) });
   const repo = path.join(base, "repo");
   const runDesk = path.join(learning.directory, "plugins", "run-desk", "data", "evidence");
   await harness.operations.saveSettings({ evidenceRoots: [repo, runDesk] });
@@ -33,7 +33,7 @@ const radix: Entry = { id: parseEntryId("framework.sglang.radix-cache")!, kind: 
 
 test("the default evidence roots include Run Desk's evidence folder", async t => {
   const base = await tempDirectory(t, "harness-defaults-");
-  const harness = createHarness({ dataDirectory: path.join(base, "data"), learning: { directory: "/learning" } as PluginLearningData, notify() {} });
+  const harness = createHarness({ directory: pluginRoot, dataDirectory: path.join(base, "data"), learning: { directory: "/learning" } as PluginLearningData, notify() {} });
   assert.deepEqual((await harness.operations.getSettings()).evidenceRoots, ["/learning/plugins/run-desk/data/evidence"]);
 });
 
