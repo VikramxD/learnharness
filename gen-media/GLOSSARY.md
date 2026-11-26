@@ -1,8 +1,17 @@
-# LearnHarness plugins
+# The product
 
-A set of complementary LearnHarness plugins that train one engineer to take generative-media and RL research from paper to production better than anyone else.
+A learning product built on LearnHarness's core loop that trains one engineer, and later others, to take generative-media and RL research from paper to production better than anyone else. It keeps LearnHarness's teaching loop and owns everything around it.
 
 ## Language
+
+**Core loop**:
+LearnHarness's own teaching engine: probing, planning, teaching with checks, practice, and graph extraction. The product keeps it as upstream builds it.
+_Avoid_: Engine, backend, LearnHarness (for the whole app)
+
+**Today**:
+The home screen: the current roadmap week, the next session to start, and runs in flight.
+_Avoid_: Dashboard, home, feed
+
 
 **Paper-to-production**:
 The full chain of skill the plugins exist to train: understand a research paper, implement it, make the implementation optimal, and serve it in production.
@@ -55,11 +64,11 @@ _Avoid_: Project, side project
 ## Harness
 
 **Harness**:
-The core plugin that owns the Stage ledger, Material Desk, the vault mirror and Handoff writing.
+The feature that owns the Stage ledger, Material Desk, the vault mirror and Handoff writing. It began as a plugin.
 _Avoid_: Core plugin, ledger plugin, LearnHarness (the app itself)
 
 **Run Desk**:
-The plugin that launches GPU runs and writes their Evidence files, the same way a repo does.
+The feature that launches GPU runs and writes their Evidence files, the same way a repo does.
 _Avoid_: GPU plugin, Modal plugin
 
 **Build skill**:
