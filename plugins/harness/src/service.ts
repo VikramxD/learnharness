@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { PluginLearningData } from "learnharness-plugin-api";
-import { ArxivClient, baseArxivId, type ArxivPaper } from "./arxiv.ts";
+import { ArxivClient, baseArxivId, isArxivId, type ArxivPaper } from "./arxiv.ts";
 import { BUILD_STAGES, createEntries, lineagePrerequisites, linkSession, markUnderstood, parseEntryId, recordHandoff, stagesOf, unlinkSession, type BuildStage, type Entry, type EntryId, type LedgerState } from "./domain.ts";
 import { scanEvidence, type ScanReport } from "./evidence.ts";
 import { teachingGoal } from "./goal.ts";
@@ -189,6 +189,35 @@ export function createHarness(deps: HarnessDeps) {
       const { appended } = await store.transact(state => recordHandoff(state, entryId, notePath));
       if (appended.length) deps.notify(LEDGER_TOPIC);
       return { notePath };
+    },
+    /** Local paths for a paper (downloading its PDF), a framework checkout or an own-work note. */
+    async materialFetch(input: unknown) {
+      const id = requiredText(input, "id");
+      const state = await store.read();
+      if (isArxivId(id)) {
+        const entry = state.entries[`paper.${baseArxivId(id)}` as EntryId];
+        return { entryId: entry?.id, title: entry?.title, pdfPath: await desk.ensurePdf(id) };
+      }
+      const entry = entryOf(state, requiredEntryId(input, "id"));
+      if (entry.source.kind === "paper") return { entryId: entry.id, title: entry.title, pdfPath: await desk.ensurePdf(entry.source.arxivId) };
+      const paths = await desk.localPaths(entry);
+      if (entry.source.kind === "framework" && !paths.checkoutPath) {
+        return { entryId: entry.id, title: entry.title, missing: `Not checked out yet. The learner can check out ${entry.source.repoUrl} at ${entry.source.commit} from the Material Desk.` };
+      }
+      return { entryId: entry.id, title: entry.title, ...paths };
+    },
+    async ledgerStatus(input: unknown) {
+      const state = await store.read();
+      const rows = ledgerSnapshot(state).entries;
+      const wanted = optionalText(input, "entryId");
+      const pick = wanted ? rows.filter(row => row.entry.id === wanted) : rows;
+      if (wanted && !pick.length) throw new Error(`Unknown entry ${wanted}.`);
+      return Promise.all(pick.map(async row => ({
+        id: row.entry.id, title: row.entry.title, lineage: row.entry.lineage, parentId: row.entry.parentId,
+        understand: row.stages.understand.state === "reopened" ? `reopened (gap: ${row.stages.understand.gap.concept})` : row.stages.understand.state,
+        implement: row.stages.implement.state, optimize: row.stages.optimize.state, serve: row.stages.serve.state,
+        ...(wanted ? await desk.localPaths(row.entry) : {}),
+      })));
     },
     getSettings: settings,
     async saveSettings(input: unknown): Promise<HarnessSettings> {
