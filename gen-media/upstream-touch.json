@@ -1,0 +1,13 @@
+{
+	"owned": [
+		"gen-media/",
+		"plugins/harness/",
+		"plugins/run-desk/",
+		"plugins/focus/",
+		".claude/skills/verify/",
+		"app/api/product/",
+		"src/product/",
+		"components/product/"
+	],
+	"allowed": []
+}
