@@ -30,7 +30,7 @@ if (command === "--version") {
   console.log(`✓ Initialized. View run at https://modal.com/apps/fake/main/${id}`);
   const worker = spawn(process.execPath, [self, "__worker", id, script, ...scriptArgs], { detached: true, stdio: "ignore", env: process.env });
   worker.unref();
-  while (load().apps.find(a => a.app_id === id)?.state !== "stopped") await sleep(200);
+  for (let app = load().apps.find(a => a.app_id === id); app && app.state !== "stopped"; app = load().apps.find(a => a.app_id === id)) await sleep(200);
   console.log("✓ App completed.");
 } else if (command === "__worker") {
   const [, id, script, ...scriptArgs] = args;

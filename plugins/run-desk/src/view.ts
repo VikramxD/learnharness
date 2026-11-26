@@ -124,7 +124,7 @@ export function mountDeskView(ctx: PluginFrontendContext, container: HTMLElement
       const scope = AbortSignal.any([signal, pass.signal]);
       const refresh = button(h("span"), "Refresh", async () => { await ctx.call("refresh"); await render(); }, scope, "ghost");
       const fresh = h("div", { class: "rd-body" },
-        h("header", { class: "rd-header" }, h("h1", {}, "Run Desk"), refresh),
+        h("header", { class: "rd-header" }, refresh),
         !status.modalFound && h("p", { class: "rd-notice" }, `Modal CLI not found at ${status.modalPath}. Set its path in Run Desk settings.`),
         !status.wandbConfigured && h("p", { class: "rd-notice rd-wandb-notice" }, status.wandbNotice),
         actionError && h("p", { class: "rd-error", role: "alert" }, actionError),
