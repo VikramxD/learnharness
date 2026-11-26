@@ -25,10 +25,24 @@ _Avoid_: Theory side, ML side
 The optimization, inference, serving and infrastructure that run those models for real users.
 _Avoid_: Infra side, MLOps
 
+## Roles
+
+**Role profile**:
+A target role described as Capability claims quoted from its job postings.
+_Avoid_: Job, target, track
+
+**Capability claim**:
+One quoted requirement from a posting, with its URL and fetch date, linked to the Entries that would prove it.
+_Avoid_: Skill, requirement, competency
+
+**Cold check**:
+An unassisted practice pass on an Entry at least seven days after it was taught, at hint rung R1 or lower. Understand counts only after one.
+_Avoid_: Retest, review, quiz
+
 ## Stages
 
 **Understand**:
-The stage where the material feels obviously true, down to its derivations or design.
+The stage where the material feels obviously true, down to its derivations or design, and has passed a Cold check.
 _Avoid_: Learn, read, study
 
 **Implement**:

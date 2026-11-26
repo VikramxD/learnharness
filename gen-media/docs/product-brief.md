@@ -36,6 +36,10 @@ Its own product, with its own name, built on LearnHarness's core loop (ADR 0004)
 
 Runs from source until it is the daily app, then gets packaged.
 
+## Vision
+
+`vision.md` extends this brief to preparing for deeply technical roles and their interviews, and ranks the capabilities to build. Where the two differ, the vision wins. `vision-synthesis.md` records how it was chosen.
+
 ## Open
 
 - The product's name, logo and accent color.
