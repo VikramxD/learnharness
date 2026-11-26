@@ -11,7 +11,7 @@ const PROJECT = "LearnHarness";
 
 // ---------- note text ----------
 
-const yamlScalar = (value: string) => (/^([A-Za-z0-9]|[/~][\w.-])[\w .,/@+()~-]*$/.test(value) && !/^(true|false|null|yes|no|on|off)$/i.test(value) ? value : JSON.stringify(value));
+const yamlScalar = (value: string) => (/^([A-Za-z0-9]|\/[\w.-]|~\/)[\w .,/@+()~-]*$/.test(value) && !/^(true|false|null|yes|no|on|off)$/i.test(value) ? value : JSON.stringify(value));
 
 function frontmatter(fields: Record<string, string | string[] | undefined>): string {
   const lines = Object.entries(fields).flatMap(([key, value]) => {
@@ -54,7 +54,14 @@ export function mirrorNotes(input: MirrorInput): { notes: Map<string, string>; c
   }
   const mirroredChains = input.chains.filter(chain => chainEntries.has(chain.id));
   const nodeName = (id: string) => statements.get(id)?.name ?? id;
-  const chainNotes = new Map(mirroredChains.map(chain => [chain.id, `${MIRROR_FOLDER}/Chains/${PROJECT} - Chain - ${safeName(nodeName(chain.conclusion))} ${chain.id.replace(/^arg_/, "").slice(0, 8)}.md`]));
+  const chainNotes = new Map<string, string>();
+  const usedChainNames = new Set<string>();
+  for (const chain of mirroredChains) {
+    let name = `${PROJECT} - Chain - ${safeName(nodeName(chain.conclusion))} ${chain.id.slice(-8)}`;
+    if (usedChainNames.has(name)) name = `${PROJECT} - Chain - ${safeName(nodeName(chain.conclusion))} ${chain.id}`;
+    usedChainNames.add(name);
+    chainNotes.set(chain.id, `${MIRROR_FOLDER}/Chains/${name}.md`);
+  }
   const concludedBy = new Map<string, string>();
   for (const chain of mirroredChains) concludedBy.set(chain.conclusion, chainNotes.get(chain.id)!);
 
@@ -202,7 +209,7 @@ export function handoffNote(input: HandoffInput): string {
     "",
     "Every file has `schema` (`\"lh-evidence/1\"`), `entry` (`" + entry.id + "`), `stage` (`\"" + stage + "\"`), `outcome` (`\"pass\"` or `\"fail\"`), `producedAt` (ISO 8601 UTC), `source` as `{ repo, commit }`, `command` (the exact command that produced the result) and, only on a failure that traces back to something not understood, `gap` as `{ concept, why }`.",
     "",
-    `A ${stage} file adds ${STAGE_FIELDS[stage]}`,
+    `${stage === "serve" ? "A" : "An"} ${stage} file adds ${STAGE_FIELDS[stage]}`,
     "",
     "Files are append-only: a new attempt is a new file. Harness reads it from the repo's `evidence/` folder once the repo is a registered evidence root.",
     "",

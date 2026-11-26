@@ -41,8 +41,7 @@ export async function mountDeskView(ctx: PluginFrontendContext, nav: Navigation,
       button(actions, {
         label: paper.inLedger ? "Open entry" : "Add paper",
         onClick: async () => {
-          if (paper.inLedger) { nav.openEntry(`paper.${paper.id}`); return; }
-          const added = await attempt(status, () => ctx.call<{ entryId: string; pdfPath: string }>("addPaper", { arxivId: paper.id }), r => `Added ${r.entryId}; PDF at ${r.pdfPath}`);
+          const added = await attempt(status, () => ctx.call<{ entryId: string; pdfPath: string }>("addPaper", { arxivId: paper.id }), r => `${r.entryId} has its PDF at ${r.pdfPath}`);
           if (added) nav.openEntry(added.entryId);
         },
       });

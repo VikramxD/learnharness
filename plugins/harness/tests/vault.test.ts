@@ -49,7 +49,7 @@ async function listTree(directory: string, prefix = ""): Promise<string[]> {
 }
 
 const DDPM_NOTE = "LearnHarness/Entries/LearnHarness - Entry - Denoising Diffusion Probabilistic Models.md";
-const CHAIN_NOTE = "LearnHarness/Chains/LearnHarness - Chain - Noise prediction loss loss1234.md";
+const CHAIN_NOTE = "LearnHarness/Chains/LearnHarness - Chain - Noise prediction loss oss12345.md";
 
 test("the mirror writes an index, one note per entry and one per linked chain, only under LearnHarness/", async t => {
   const { vault, harness } = await setup(t);
@@ -63,11 +63,11 @@ test("the mirror writes an index, one note per entry and one per linked chain, o
 
   const entry = await readFile(path.join(vault, DDPM_NOTE), "utf8");
   assert.match(entry, /^---\ntitle: LearnHarness - Entry - Denoising Diffusion Probabilistic Models\ntags: \[learnharness, entry, paper\]\nproject: LearnHarness\nstatus: current\nlh_entry: paper\.2006\.11239\nlh_understand: done\n/);
-  assert.match(entry, /\[\[LearnHarness - Chain - Noise prediction loss loss1234\]\]/);
+  assert.match(entry, /\[\[LearnHarness - Chain - Noise prediction loss oss12345\]\]/);
 
   const chainNote = await readFile(path.join(vault, CHAIN_NOTE), "utf8");
   assert.match(chainNote, /lh_entry: \[paper\.2006\.11239\]/);
-  assert.match(chainNote, /## Premises\n\n- x_t can be sampled from x_0 in one step through alpha-bar\. \(\[\[LearnHarness - Chain - Forward closed form closedfo\]\]\)/);
+  assert.match(chainNote, /## Premises\n\n- x_t can be sampled from x_0 in one step through alpha-bar\. \(\[\[LearnHarness - Chain - Forward closed form sedform1\]\]\)/);
   assert.match(chainNote, /## Therefore\n\nPredicting the added noise minimizes a reweighted ELBO\./);
   assert.match(chainNote, /\[\[LearnHarness - Entry - Denoising Diffusion Probabilistic Models\]\]/);
 });
@@ -85,7 +85,7 @@ test("a re-sync rewrites only changed notes and a hand edit survives", async t =
   await harness.operations.linkSession({ entryId: "paper.2010.02502", chatId: "c1" });
   const after = await harness.operations.syncVault();
   assert.deepEqual(after.written.sort(), [
-    "LearnHarness/Chains/LearnHarness - Chain - Forward closed form closedfo.md",
+    "LearnHarness/Chains/LearnHarness - Chain - Forward closed form sedform1.md",
     "LearnHarness/Entries/LearnHarness - Entry - Denoising Diffusion Implicit Models.md",
     "LearnHarness/LearnHarness - Index.md",
   ], "only notes whose content changed are rewritten; the edited chain note is skipped");
@@ -103,7 +103,7 @@ test("the mirror deletes only notes it created and no longer needs, and never a 
 
   await harness.operations.unlinkSession({ entryId: "paper.2006.11239", chatId: "c1" });
   const second = await harness.operations.syncVault();
-  assert.deepEqual(second.deleted.sort(), ["LearnHarness/Chains/LearnHarness - Chain - Forward closed form closedfo.md", CHAIN_NOTE]);
+  assert.deepEqual(second.deleted.sort(), ["LearnHarness/Chains/LearnHarness - Chain - Forward closed form sedform1.md", CHAIN_NOTE]);
   assert.equal(await readFile(squatter, "utf8"), "hand written\n");
 });
 
@@ -130,7 +130,7 @@ test("Hand off to build writes the Build skill's Handoff shape and records it on
     "lh_entry: paper.2006.11239",
     "",
   ].join("\n"));
-  assert.match(note, /## What was understood\n\n- \[\[LearnHarness - Chain - Forward closed form closedfo\]\]\n- \[\[LearnHarness - Chain - Noise prediction loss loss1234\]\]/);
+  assert.match(note, /## What was understood\n\n- \[\[LearnHarness - Chain - Forward closed form sedform1\]\]\n- \[\[LearnHarness - Chain - Noise prediction loss oss12345\]\]/);
   assert.match(note, /`\/Users\/me\/ddpm\/evidence\/paper\.2006\.11239\/implement\/<producedAt as YYYYMMDDTHHMMSSZ>\.json`/);
   assert.match(note, /`tests` as `\{ passed, total \}`/);
 
