@@ -1,0 +1,50 @@
+.rd-root { --rd-red: #f87171; --rd-amber: #fbbf24; --rd-green: #4ade80; --rd-blue: #60a5fa; color: var(--foreground, inherit); font-size: 14px; line-height: 1.5; }
+.rd-body { padding: 20px; max-width: 1100px; margin: 0 auto; }
+.rd-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.rd-header h1 { font-size: 20px; font-weight: 600; margin: 0; }
+.rd-section { margin-top: 20px; }
+.rd-section__head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.rd-section__head h2 { margin: 0; }
+.rd-section h2 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+.rd-section h3 { font-size: 13px; font-weight: 600; margin: 18px 0 6px; }
+.rd-section__head > :last-child:not(h2) { margin-left: auto; }
+.rd-detail .rd-section__head > .rd-chip { margin-left: 0; }
+.rd-muted { color: var(--muted-foreground, #888); font-size: 12px; }
+.rd-empty { padding: 12px; border: 1px dashed var(--border, #8885); border-radius: 8px; }
+.rd-notice { padding: 8px 12px; border: 1px solid var(--border, #8885); border-left: 3px solid var(--rd-amber); border-radius: 6px; margin: 8px 0; }
+.rd-error { color: var(--destructive, #dc5555); white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
+.rd-error:empty { display: none; }
+.rd-list { list-style: none; padding: 0; margin: 0; border: 1px solid var(--border, #8885); border-radius: 10px; }
+.rd-template { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
+.rd-template + .rd-template { border-top: 1px solid var(--border, #8885); }
+.rd-template__main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.rd-template__name { font-weight: 600; }
+.rd-row-actions { display: flex; gap: 6px; flex: none; }
+.rd-table-wrap { overflow-x: auto; border: 1px solid var(--border, #8885); border-radius: 10px; }
+.rd-table { width: 100%; border-collapse: collapse; }
+.rd-table th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted-foreground, #888); padding: 8px 12px; border-bottom: 1px solid var(--border, #8885); }
+.rd-table td { padding: 8px 12px; white-space: nowrap; }
+.rd-run { cursor: pointer; }
+.rd-run:hover, .rd-run:focus-visible { background: var(--muted, #8881); outline: none; }
+.rd-run + .rd-run td { border-top: 1px solid var(--border, #8884); }
+.rd-cost { font-variant-numeric: tabular-nums; }
+.rd-chip { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; border: 1px solid currentColor; }
+.rd-chip[data-status="queued"] { color: var(--muted-foreground, #888); }
+.rd-chip[data-status="running"] { color: var(--rd-blue); }
+.rd-chip[data-status="succeeded"], .rd-chip[data-outcome="pass"] { color: var(--rd-green); }
+.rd-chip[data-status="failed"], .rd-chip[data-outcome="fail"] { color: var(--rd-red); }
+.rd-chip[data-status="stopped"] { color: var(--rd-amber); }
+.rd-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0; }
+.rd-facts dt { color: var(--muted-foreground, #888); font-size: 12px; }
+.rd-facts dd { margin: 0; overflow-wrap: anywhere; }
+.rd-mono, .rd-pre { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; }
+.rd-pre { background: var(--muted, #8881); border: 1px solid var(--border, #8885); border-radius: 8px; padding: 10px 12px; max-height: 360px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.rd-dialog { display: flex; flex-direction: column; gap: 10px; padding: 20px; min-width: min(560px, 90vw); color: var(--foreground, inherit); font-size: 14px; }
+.rd-dialog__title { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
+.rd-dialog__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.rd-field { display: flex; flex-direction: column; gap: 4px; }
+.rd-label { font-size: 12px; font-weight: 600; }
+.rd-input { border: 1px solid var(--border, #8886); border-radius: 6px; padding: 6px 10px; background: var(--background, transparent); color: inherit; font: inherit; }
+.rd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.rd-confirm__worst { font-size: 16px; }
+.rd-settings { padding: 4px 0; }
