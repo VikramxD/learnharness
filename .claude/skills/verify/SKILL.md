@@ -1,27 +1,28 @@
 ---
 name: verify
-description: Drive an isolated LearnHarness 0.7.0 (bundled server on 127.0.0.1 plus headless Chromium) to prove a plugin's behavior. Boots a throwaway profile with your plugin dist, clicks through the real UI, calls the plugin backend, seeds a knowledge graph, and replays scripted model turns with no credentials. Use whenever you change a plugin in this repo and must show it working in the app, or need a screenshot of LearnHarness.
+description: Drive an isolated LearnHarness (the fork built from source, or the released app's bundled server, on 127.0.0.1 plus headless Chromium) to prove fork code or a plugin's behavior. Boots a throwaway profile with your plugin dist, clicks through the real UI, calls the plugin backend, seeds a knowledge graph, and replays scripted model turns with no credentials. Use whenever you change a plugin in this repo and must show it working in the app, or need a screenshot of LearnHarness.
 ---
 
 # Verify a plugin in an isolated LearnHarness
 
 The harness lives in `gen-media/tools/verify/`. Every command below runs from the repo root. It never touches the user's profile at `~/Library/Application Support/LearnHarness` or their vault. Each boot gets its own temp root, port, data dir, `HOME`, and auth file.
 
-Requirements: `/Applications/LearnHarness.app` (0.7.0), Node 22 or later, `npm install` at the repo root once (installs `playwright-core`), and a cached `chromium_headless_shell-*` under `~/Library/Caches/ms-playwright/`. Set `LH_VERIFY_CHROMIUM` to point at another headless shell.
+Requirements: for the released target, `/Applications/LearnHarness.app` (0.7.0); for the source target, `npm ci` and `npm run plugins:setup` at the repo root. Node 22 or later, `npm install` at the repo root once (installs `playwright-core`), and a cached `chromium_headless_shell-*` under `~/Library/Caches/ms-playwright/`. Set `LH_VERIFY_CHROMIUM` to point at another headless shell.
 
 ## Launch
 
 Build your plugin first so `plugins/<name>/dist/manifest.json` exists. Then:
 
 ```sh
-node gen-media/tools/verify/boot.mjs --plugins plugins/<name>[,<other plugin dir>] [--port N] [--script gen-media/tools/verify/fixtures/fake-turn.json] [--vault <dir to copy>]
+node gen-media/tools/verify/boot.mjs [--source . [--rebuild]] [--plugins plugins/<name>[,<other plugin dir>]] [--port N] [--script gen-media/tools/verify/fixtures/fake-turn.json] [--vault <dir to copy>]
 ```
 
-- `--plugins` takes plugin roots (containing `dist/`) or dist dirs (containing `manifest.json`), comma-separated.
-- Ready means this exact line on stdout: `ready http://127.0.0.1:<port> plugins=<id>:active,... state=<root>/state.json`. Boot waits until `GET /api/plugins` reports every plugin `active` and exits 1 if one reports `error`, printing the server log tail.
+- `--source <repo>` boots the fork's own code: it builds `<repo>/.next/standalone` unless `product-build.json` there already names a clean `HEAD`, then runs `server.js` with host Node. The build takes minutes. `--rebuild` forces it. Without `--source`, boot runs the released app. Use `--source` to prove fork app code. `GET /api/product/health` returns the booted commit there and 404 on the released app.
+- `--plugins` is optional. It takes plugin roots (containing `dist/`) or dist dirs (containing `manifest.json`), comma-separated.
+- Ready means this exact line on stdout: `ready http://127.0.0.1:<port> target=<source:<commit>|released> plugins=<id>:active,... state=<root>/state.json`. Boot waits until `GET /api/plugins` reports every plugin `active` and exits 1 if one reports `error`, printing the server log tail.
 - `--script` starts the fake model and connects it as the keyless custom provider for the strong, cheap and vision slots. Without it the app has no model, and the composer shows `Add a provider key`.
 - `--vault` copies the given directory to `<root>/vault`. Point your plugin's vault setting there. Never point a plugin at the real vault.
-- The state file records `url`, `port`, `dataDir`, `pids`, `serverLog`, `vault`, and `fakeModel`. Pass it to every other tool.
+- The state file records `target`, `build` (the source stamp), `url`, `port`, `dataDir`, `pids`, `serverLog`, `vault`, and `fakeModel`. Pass it to every other tool.
 
 ## Doctor
 
@@ -91,6 +92,10 @@ It signals only the recorded pids, and only while their stdout still points into
 - Instances run side by side on different ports, and the user's running app is unaffected.
 - The server gets a minimal env: `HOME=<root>/home`, `LH_IGNORE_ENV_KEYS=1`, and no inherited provider keys. Settings start with `general.autoUpdate=false`.
 - The Electron window path (CDP) is not wrapped here. Its API refuses direct curl with 403. Use this headless path unless you need Electron-only behavior.
+
+## Done checks
+
+`npm --prefix gen-media run verify:checks` runs every `gen-media/tools/verify/checks/*.mjs` in order and fails if any exits non-zero. Add a phase's done check there as a numbered script.
 
 ## Feature map
 
