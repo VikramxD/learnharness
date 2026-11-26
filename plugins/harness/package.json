@@ -1,0 +1,25 @@
+{
+  "name": "learnharness-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "install:local": "npm run build && node scripts/install-plugin-local.mjs"
+  },
+  "dependencies": {
+    "typebox": "1.4.3"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-agent-core": "1.5.2",
+    "@earendil-works/pi-ai": "1.5.2",
+    "@happy-dom/global-registrator": "21.0.4",
+    "@types/node": "24.13.3",
+    "esbuild": "0.28.2",
+    "learnharness-plugin-api": "file:.sdk",
+    "tsx": "4.23.12",
+    "typescript": "5.9.3"
+  }
+}
