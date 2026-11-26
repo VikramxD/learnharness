@@ -29,3 +29,13 @@ export async function readDirectories(directory: string): Promise<string[]> {
     throw error;
   }
 }
+
+/** Run async work one call at a time, in call order; a failure does not block later calls. */
+export function serialized() {
+  let tail: Promise<unknown> = Promise.resolve();
+  return <T>(work: () => Promise<T>): Promise<T> => {
+    const result = tail.then(work, work);
+    tail = result.catch(() => undefined);
+    return result;
+  };
+}

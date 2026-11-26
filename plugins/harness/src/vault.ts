@@ -3,13 +3,11 @@ import path from "node:path";
 import type { GraphChain, GraphNode } from "learnharness-plugin-api";
 import { BUILD_STAGES, type BuildStage, type BuildStatus, type Entry, type EntryId } from "./domain.ts";
 import { evidenceSummary } from "./evidence-text.ts";
-import { sha256, writeFileAtomic } from "./files.ts";
+import { serialized, sha256, writeFileAtomic } from "./files.ts";
 import type { EntryRow } from "./projection.ts";
 
 export const MIRROR_FOLDER = "LearnHarness";
 const PROJECT = "LearnHarness";
-
-// ---------- note text ----------
 
 const yamlScalar = (value: string) => (/^([A-Za-z0-9]|\/[\w.-]|~\/)[\w .,/@+()~-]*$/.test(value) && !/^(true|false|null|yes|no|on|off)$/i.test(value) ? value : JSON.stringify(value));
 
@@ -153,8 +151,6 @@ function sourceText(entry: Entry): string {
   return link(source.vaultNotePath);
 }
 
-// ---------- handoff ----------
-
 const STAGE_FIELDS: Record<BuildStage, string> = {
   implement: "`reference` (what the implementation is checked against) and `tests` as `{ passed, total }`. It passes only when `tests.total > 0` and every test passed.",
   optimize: "`metric`, `unit`, `better` (`\"lower\"` or `\"higher\"`), `baseline`, `result`, `hardware` and `why` (one sentence on what made the difference). It passes only when `result` beats `baseline` in the `better` direction.",
@@ -216,8 +212,6 @@ export function handoffNote(input: HandoffInput): string {
   ].join("\n");
 }
 
-// ---------- writing with a manifest ----------
-
 type ManifestKind = "mirror" | "handoff";
 interface Manifest { version: 1; vaults: Record<string, { files: Record<string, { sha256: string; kind: ManifestKind }> }> }
 
@@ -236,14 +230,8 @@ const currentHash = async (file: string) => fs.readFile(file).then(sha256, () =>
 /** Writes only under `<vault>/LearnHarness/`, records what it wrote, and never touches a file
  * whose content changed since Harness last wrote it, or one Harness did not create. */
 export class VaultWriter {
-  private queue: Promise<unknown> = Promise.resolve();
+  private readonly serialize = serialized();
   constructor(private readonly manifestFile: string) {}
-
-  private serialize<T>(work: () => Promise<T>): Promise<T> {
-    const result = this.queue.then(work, work);
-    this.queue = result.catch(() => undefined);
-    return result;
-  }
 
   private async open(vaultPath: string) {
     if (!(await fs.stat(vaultPath).then(s => s.isDirectory(), () => false))) throw new Error(`The vault folder ${vaultPath} does not exist.`);

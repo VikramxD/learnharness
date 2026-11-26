@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 import * as fs from "node:fs/promises";
 import path from "node:path";
+import { serialized } from "./files.ts";
 import { emptyLedger, reduce, type DraftEvent, type LedgerEvent, type LedgerState } from "./domain.ts";
 
 /** The append-only ledger log. One instance per backend owns the file; every change runs
  * through `transact`, which decides against the current state and appends under one lock. */
 export class LedgerStore {
   private state: LedgerState | undefined;
-  private queue: Promise<unknown> = Promise.resolve();
+  private readonly serialize = serialized();
 
   constructor(readonly file: string, private readonly now: () => Date = () => new Date()) {}
 
@@ -29,12 +30,6 @@ export class LedgerStore {
       this.state = state;
       return { state, appended };
     });
-  }
-
-  private serialize<T>(work: () => Promise<T>): Promise<T> {
-    const run = this.queue.then(work, work);
-    this.queue = run.catch(() => undefined);
-    return run;
   }
 
   private async load(): Promise<LedgerState> {
